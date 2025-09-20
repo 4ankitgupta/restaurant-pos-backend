@@ -1,0 +1,239 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Define an enum for roles for better type safety in the application
+enum UserRole {
+  ADMIN
+  MANAGER
+  CASHIER
+  WAITER
+  KITCHEN_STAFF
+}
+
+model Restaurant {
+  id              String            @id @default(uuid())
+  name            String
+  email           String?           @unique
+  phone           String?
+  address         String?
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  users           User[]
+  menuCategories  MenuCategory[]
+  menuItems       MenuItem[]
+  tables          Table[]
+  orders          Order[]
+  orderItems      OrderItem[]
+  payments        Payment[]
+  inventoryItems  InventoryItem[]
+  purchaseOrders  PurchaseOrder[]
+  purchaseItems   PurchaseItem[]
+  suppliers       Supplier[]
+  expenses        Expense[]
+}
+
+model User {
+  id            String     @id @default(uuid())
+  name          String
+  email         String     @unique
+  phone         String?
+  passwordHash  String
+  role          UserRole
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  orders        Order[]
+}
+
+model MenuCategory {
+  id            String     @id @default(uuid())
+  name          String
+  description   String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  menuItems     MenuItem[]
+}
+
+model MenuItem {
+  id              String        @id @default(uuid())
+  name            String
+  description     String?
+  price           Decimal
+  isAvailable     Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId    String
+  category        MenuCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryId      String?
+  orderItems      OrderItem[]
+}
+
+enum TableStatus {
+  Available
+  Occupied
+  Reserved
+}
+
+model Table {
+  id           String      @id @default(uuid())
+  tableNumber  String
+  capacity     Int
+  status       TableStatus @default(Available)
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  orders       Order[]
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  SERVED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  PARTIAL
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  status        OrderStatus   @default(PENDING)
+  totalAmount   Decimal       @default(0.0)
+  paymentStatus PaymentStatus @default(UNPAID)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  table         Table?        @relation(fields: [tableId], references: [id])
+  tableId       String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId        String?
+  orderItems    OrderItem[]
+  payments      Payment[]
+}
+
+model OrderItem {
+  id           String     @id @default(uuid())
+  quantity     Int
+  price        Decimal // Price at the time of order
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId      String
+  menuItem     MenuItem?  @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  menuItemId   String?
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  UPI
+  WALLET
+}
+
+enum TransactionStatus {
+  SUCCESS
+  FAILED
+  PENDING
+}
+
+model Payment {
+  id             String            @id @default(uuid())
+  amount         Decimal
+  paymentMethod  PaymentMethod
+  status         TransactionStatus @default(SUCCESS)
+  transactionId  String?
+  createdAt      DateTime          @default(now())
+  restaurant     Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId   String
+  order          Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        String
+}
+
+model InventoryItem {
+  id           String     @id @default(uuid())
+  name         String
+  unit         String // e.g., kg, liter, piece
+  quantity     Decimal    @default(0.0)
+  threshold    Decimal    @default(0.0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  purchaseItems PurchaseItem[]
+}
+
+model Supplier {
+  id            String          @id @default(uuid())
+  name          String
+  phone         String?
+  email         String?
+  address       String?
+  restaurant    Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  purchaseOrders PurchaseOrder[]
+}
+
+enum PurchaseStatus {
+  PENDING
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id           String          @id @default(uuid())
+  totalAmount  Decimal?
+  status       PurchaseStatus  @default(PENDING)
+  createdAt    DateTime        @default(now())
+  restaurant   Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  supplier     Supplier?       @relation(fields: [supplierId], references: [id])
+  supplierId   String?
+  purchaseItems PurchaseItem[]
+}
+
+model PurchaseItem {
+  id            String        @id @default(uuid())
+  quantity      Decimal?
+  price         Decimal?
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  inventoryItemId String
+}
+
+model Expense {
+  id           String     @id @default(uuid())
+  description  String
+  amount       Decimal
+  expenseDate  DateTime
+  createdAt    DateTime   @default(now())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+}
