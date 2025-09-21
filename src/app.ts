@@ -10,6 +10,11 @@ import httpStatus from "http-status";
 
 // --- Import Routes ---
 import authRoutes from "./modules/auth/auth.routes.js";
+import orderRoutes from "./modules/order/order.routes.js";
+import paymentRoutes from "./modules/payment/payment.routes.js";
+import tableRoutes from "./modules/table/table.routes.js";
+import menuCategoryRoutes from "./modules/menuCategory/menuCategory.routes.js";
+import inventoryRoutes from "./modules/inventory/inventory.routes.js";
 // ... import other routes as you create them
 
 const app: Application = express();
@@ -22,7 +27,11 @@ app.use(cors({ origin: "*", credentials: true }));
 // --- API Routes ---
 const apiRouter = express.Router();
 apiRouter.use("/auth", authRoutes);
-// apiRouter.use('/users', userRoutes);
+apiRouter.use("/orders", orderRoutes);
+apiRouter.use("/payments", paymentRoutes);
+apiRouter.use("/tables", tableRoutes);
+apiRouter.use("/menu-categories", menuCategoryRoutes);
+apiRouter.use("/inventory", inventoryRoutes);
 // ... use other routes
 
 app.use("/api/v1", apiRouter);
