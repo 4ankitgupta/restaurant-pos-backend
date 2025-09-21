@@ -14,6 +14,7 @@ import orderRoutes from "./modules/order/order.routes.js";
 import paymentRoutes from "./modules/payment/payment.routes.js";
 import tableRoutes from "./modules/table/table.routes.js";
 import menuCategoryRoutes from "./modules/menuCategory/menuCategory.routes.js";
+import menuItemRoutes from "./modules/menuItem/menuItem.routes.js";
 import inventoryRoutes from "./modules/inventory/inventory.routes.js";
 // ... import other routes as you create them
 
@@ -31,6 +32,7 @@ apiRouter.use("/orders", orderRoutes);
 apiRouter.use("/payments", paymentRoutes);
 apiRouter.use("/tables", tableRoutes);
 apiRouter.use("/menu-categories", menuCategoryRoutes);
+apiRouter.use("/menu-items", menuItemRoutes);
 apiRouter.use("/inventory", inventoryRoutes);
 // ... use other routes
 
