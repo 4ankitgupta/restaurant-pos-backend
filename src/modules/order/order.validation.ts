@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { OrderStatus } from "@prisma/client";
 
-export const createOrderSchema = z.object({
+export const addItemsToOrderSchema = z.object({
   body: z.object({
-    tableId: z.string().uuid().optional(),
     items: z
       .array(
         z.object({
@@ -12,6 +11,9 @@ export const createOrderSchema = z.object({
         })
       )
       .min(1),
+  }),
+  params: z.object({
+    orderId: z.string().uuid(),
   }),
 });
 

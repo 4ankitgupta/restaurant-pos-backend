@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   getAllTablesController,
-  allocateTableController,
+  seatTableController, // Renamed from allocate
   updateTableStatusController,
 } from "./table.controller.js";
 import {
@@ -9,16 +9,17 @@ import {
   authorizeRoles,
 } from "../../middlewares/auth.middleware.js";
 import { UserRole } from "@prisma/client";
+import { getActiveOrderByTableController } from "../order/order.controller.js"; // Import from order controller
 
 const router = Router();
 
 router.get("/", authenticateJWT, getAllTablesController);
 
 router.post(
-  "/:tableId/allocate",
+  "/:tableId/seat", // Changed from /allocate
   authenticateJWT,
   authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
-  allocateTableController
+  seatTableController
 );
 
 router.patch(
@@ -26,6 +27,14 @@ router.patch(
   authenticateJWT,
   authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
   updateTableStatusController
+);
+
+// --- NEW ---
+router.get(
+  "/:tableId/active-order",
+  authenticateJWT,
+  authorizeRoles(UserRole.WAITER, UserRole.MANAGER, UserRole.CASHIER),
+  getActiveOrderByTableController
 );
 
 export default router;

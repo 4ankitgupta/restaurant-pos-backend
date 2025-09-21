@@ -14,26 +14,27 @@ export const getAllTablesController = asyncHandler(
   }
 );
 
-export const allocateTableController = asyncHandler(
+export const seatTableController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const restaurantId = req.user?.restaurantId;
+    const userId = req.user?.id;
     const { tableId } = req.params;
-    const { orderId, partySize } = req.body;
+    const { partySize } = req.body;
 
     if (!tableId) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Table ID is required");
     }
 
-    const table = await tableService.allocateTable(
+    const result = await tableService.seatTable(
       tableId,
-      orderId,
       partySize,
-      restaurantId!
+      restaurantId!,
+      userId!
     );
     res
       .status(httpStatus.OK)
       .json(
-        new ApiResponse(httpStatus.OK, table, "Table allocated successfully")
+        new ApiResponse(httpStatus.OK, result, "Table seated successfully")
       );
   }
 );
