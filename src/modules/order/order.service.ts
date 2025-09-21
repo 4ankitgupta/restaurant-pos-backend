@@ -1,13 +1,14 @@
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
+import * as tableService from "../table/table.service.js"; // Import table service
 
 export const createOrder = async (
   orderData: any,
   restaurantId: string,
   userId: string
 ) => {
-  const { tableId, items } = orderData;
+  const { tableId, items, partySize } = orderData;
 
   const menuItems = await prisma.menuItem.findMany({
     where: {
@@ -44,7 +45,7 @@ export const createOrder = async (
     data: {
       restaurantId,
       userId,
-      tableId,
+      tableId, // We can initially set it to null
       totalAmount,
       orderItems: {
         create: orderItemsData,
@@ -54,6 +55,16 @@ export const createOrder = async (
       orderItems: true,
     },
   });
+
+  // If a tableId is provided, allocate the table
+  if (tableId && partySize) {
+    await tableService.allocateTable(
+      tableId,
+      order.id,
+      partySize,
+      restaurantId
+    );
+  }
 
   return order;
 };
