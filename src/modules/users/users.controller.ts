@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { UserService } from "./users.service";
+import { UserService } from "./users.service.js";
 
 export class UserController {
   private userService: UserService;
@@ -19,6 +19,10 @@ export class UserController {
 
   public async getUserById(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
     try {
       const user = await this.userService.getUserById(id);
       if (user) {
@@ -42,6 +46,10 @@ export class UserController {
 
   public async updateUser(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
     try {
       const updatedUser = await this.userService.updateUser(id, req.body);
       if (updatedUser) {
@@ -56,6 +64,10 @@ export class UserController {
 
   public async deleteUser(req: Request, res: Response): Promise<void> {
     const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
     try {
       const deleted = await this.userService.deleteUser(id);
       if (deleted) {

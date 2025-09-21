@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express";
-import { MenuService } from "./menu.service";
+import { MenuService } from "./menu.service.js";
 
 export class MenuController {
   private menuService: MenuService;
@@ -19,6 +19,9 @@ export class MenuController {
 
   public async getMenuById(req: Request, res: Response): Promise<Response> {
     const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
     try {
       const menu = await this.menuService.getMenuById(id);
       if (!menu) {
@@ -43,6 +46,9 @@ export class MenuController {
   public async updateMenu(req: Request, res: Response): Promise<Response> {
     const { id } = req.params;
     const menuData = req.body;
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
     try {
       const updatedMenu = await this.menuService.updateMenu(id, menuData);
       if (!updatedMenu) {
@@ -56,6 +62,9 @@ export class MenuController {
 
   public async deleteMenu(req: Request, res: Response): Promise<Response> {
     const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
     try {
       const deleted = await this.menuService.deleteMenu(id);
       if (!deleted) {

@@ -1,16 +1,14 @@
 import { Router } from "express";
-import {
-  getMenuItems,
-  createMenuItem,
-  updateMenuItem,
-  deleteMenuItem,
-} from "./menu.controller.js";
+import { MenuController } from "./menu.controller.js";
 
 const router = Router();
+const menuController = new MenuController();
 
-router.get("/", getMenuItems);
-router.post("/", createMenuItem);
-router.put("/:id", updateMenuItem);
-router.delete("/:id", deleteMenuItem);
+// Correctly map routes to the existing controller methods
+router.get("/", menuController.getAllMenus);
+router.post("/", menuController.createMenu);
+router.get("/:id", menuController.getMenuById); // Added this route
+router.put("/:id", menuController.updateMenu);
+router.delete("/:id", menuController.deleteMenu);
 
 export default router;
