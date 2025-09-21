@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from "express";
+import { type Request, type Response, type NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import httpStatus from "http-status";
-import { ApiError } from "../utils/ApiError";
-import { asyncHandler } from "../utils/asyncHandler";
-import config from "../config";
-import prisma from "../db";
+import { ApiError } from "../utils/ApiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import config from "../config/index.js";
+import prisma from "../db/index.js";
 import { UserRole } from "@prisma/client";
 
 export interface AuthRequest extends Request {

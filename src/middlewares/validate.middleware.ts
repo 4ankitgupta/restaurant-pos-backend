@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import { AnyZodObject } from "zod";
+import { type Request, type Response, type NextFunction } from "express";
+import { type AnyZodObject } from "zod";
 import httpStatus from "http-status";
-import { ApiError } from "../utils/ApiError";
+import { ApiError } from "../utils/ApiError.js";
 
 export const validate =
   (schema: AnyZodObject) =>

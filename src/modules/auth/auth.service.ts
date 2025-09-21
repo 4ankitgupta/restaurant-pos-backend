@@ -1,10 +1,10 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { User, UserRole } from "@prisma/client";
+import { UserRole } from "@prisma/client";
 import httpStatus from "http-status";
-import prisma from "../../db";
-import { ApiError } from "../../utils/ApiError";
-import config from "../../config";
+import prisma from "../../db/index.js";
+import { ApiError } from "../../utils/ApiError.js";
+import config from "../../config/index.js";
 
 // Generate JWT Tokens
 const generateTokens = (user: { id: string; role: UserRole }) => {

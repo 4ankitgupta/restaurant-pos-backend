@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { validate } from "../../middlewares/validate.middleware";
-import { registerSchema, loginSchema } from "./auth.validation";
-import { registerUserController, loginController } from "./auth.controller";
+import { validate } from "../../middlewares/validate.middleware.js";
+import { registerSchema, loginSchema } from "./auth.validation.js";
+import { registerUserController, loginController } from "./auth.controller.js";
 import {
   authenticateJWT,
   authorizeRoles,
-} from "../../middlewares/auth.middleware";
+} from "../../middlewares/auth.middleware.js";
 import { UserRole } from "@prisma/client";
 
 const router = Router();

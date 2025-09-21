@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import { type Request, type Response } from "express";
 import httpStatus from "http-status";
-import { asyncHandler } from "../../utils/asyncHandler";
-import { registerUser, loginUser } from "./auth.service";
-import { ApiResponse } from "../../utils/ApiResponse";
-import { AuthRequest } from "../../middlewares/auth.middleware";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { registerUser, loginUser } from "./auth.service.js";
+import { ApiResponse } from "../../utils/ApiResponse.js";
+import { type AuthRequest } from "../../middlewares/auth.middleware.js";
 
 // Controller for user registration (typically by Admin/Manager)
 export const registerUserController = asyncHandler(

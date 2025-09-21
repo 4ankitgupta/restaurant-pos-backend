@@ -1,11 +1,15 @@
-import express, { Application, Request, Response } from "express";
+import express, {
+  type Application,
+  type Request,
+  type Response,
+} from "express";
 import cors from "cors";
-import { errorHandler } from "./middlewares/error.middleware";
-import { ApiError } from "./utils/ApiError";
+import { errorHandler } from "./middlewares/error.middleware.js";
+import { ApiError } from "./utils/ApiError.js";
 import httpStatus from "http-status";
 
 // --- Import Routes ---
-import authRoutes from "./modules/auth/auth.routes";
+import authRoutes from "./modules/auth/auth.routes.js";
 // ... import other routes as you create them
 
 const app: Application = express();
