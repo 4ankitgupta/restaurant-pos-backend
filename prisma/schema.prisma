@@ -90,6 +90,7 @@ enum TableStatus {
   Available
   Occupied
   Reserved
+  NeedCleaning
 }
 
 model Table {

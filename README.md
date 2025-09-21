@@ -67,16 +67,45 @@ Follow these instructions to get the project set up and running on your local ma
   ```
 
 4. Run Database Migrations
-
 - Prisma will use the schema.prisma file to create the necessary tables in your database.
-      ```
-      npx prisma migrate dev --name "init"
-      ```
-  5.Generate Prisma Client
+
+    ```
+    npx prisma migrate dev --name "init"
+    ```
+5. Generate Prisma Client
 - This command generates the TypeScript types based on your database schema.
-  ```
-  npx prisma generate
-  ```
+
+    ```
+    npx prisma generate
+    ```
+
+6. Seed the Database (Optional):
+- Seeding is the process of populating your database with initial data. This is useful for development to have default users, roles, or menu items ready to go.
+
+- First, ensure your package.json file is configured to run the seed script. Add the following prisma key if it's not already there:
+
+    ```
+    "prisma": {
+        "seed": "ts-node prisma/seed.ts"
+    }
+    ```
+You have two ways to run the seed script:
+
+- Option A: Manually
+
+    You can run the seed script at any time using this command:
+
+    ```
+    npx prisma db seed
+    ```
+- Option B: Automatically After Migrating (Recommended)
+
+    The prisma migrate dev command automatically triggers the seed script after a migration is successfully applied. To reset your database and re-run all migrations and the seed script from scratch, use:
+
+    ```
+    npx prisma migrate reset
+    ```
+This command is extremely useful during development for a clean slate.
 
 ### Running the Application
 
