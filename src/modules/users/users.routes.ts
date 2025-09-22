@@ -1,13 +1,34 @@
 import { Router } from "express";
 import { UserController } from "./users.controller.js";
+import { authenticateJWT } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 const userController = new UserController();
 
-router.get("/", userController.getAllUsers);
-router.get("/:id", userController.getUserById);
-router.post("/", userController.createUser);
-router.put("/:id", userController.updateUser);
-router.delete("/:id", userController.deleteUser);
+router.get(
+  "/",
+  authenticateJWT,
+  userController.getAllUsers.bind(userController)
+);
+router.post(
+  "/",
+  authenticateJWT,
+  userController.createUser.bind(userController)
+);
+router.get(
+  "/:id",
+  authenticateJWT,
+  userController.getUserById.bind(userController)
+);
+router.put(
+  "/:id",
+  authenticateJWT,
+  userController.updateUser.bind(userController)
+);
+router.delete(
+  "/:id",
+  authenticateJWT,
+  userController.deleteUser.bind(userController)
+);
 
 export default router;
