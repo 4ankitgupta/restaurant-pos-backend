@@ -27,7 +27,7 @@ export const createOrder = async (
     const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
     let totalAmount = 0;
 
-    // 2. Calculate the total amount
+    // 2. Calculate the total amount from the fetched menu items
     for (const item of items) {
       const menuItem = menuItemsById.get(item.menuItemId);
       if (menuItem) {
@@ -35,7 +35,7 @@ export const createOrder = async (
       }
     }
 
-    // 3. Create the order and its items in a single operation
+    // 3. Create the order and its associated items in a single, atomic operation
     const newOrder = await tx.order.create({
       data: {
         restaurantId,
@@ -62,7 +62,7 @@ export const createOrder = async (
       },
     });
 
-    // 4. Broadcast the NEW_ORDER event so the chef's screen updates
+    // 4. Broadcast the successful creation of the new order via WebSocket
     broadcastToRestaurant(restaurantId, {
       type: "NEW_ORDER",
       payload: newOrder,
@@ -211,4 +211,23 @@ export const getActiveOrderByTable = async (
     );
   }
   return order;
+};
+
+export const getAllOrders = async (restaurantId: string) => {
+  return prisma.order.findMany({
+    where: {
+      restaurantId,
+    },
+    include: {
+      orderItems: {
+        include: {
+          menuItem: true,
+        },
+      },
+      table: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 };

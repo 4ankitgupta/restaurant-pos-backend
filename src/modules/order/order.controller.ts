@@ -125,3 +125,16 @@ export const updateOrderStatusController = asyncHandler(
       .json(new ApiResponse(httpStatus.OK, order, "Order status updated"));
   }
 );
+
+export const getAllOrdersController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+
+    if (!restaurantId) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "User not authenticated");
+    }
+
+    const orders = await orderService.getAllOrders(restaurantId);
+    res.status(httpStatus.OK).json(new ApiResponse(httpStatus.OK, orders));
+  }
+);

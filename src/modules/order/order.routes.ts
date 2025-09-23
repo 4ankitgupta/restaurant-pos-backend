@@ -10,6 +10,8 @@ import {
   addItemsToOrderController,
   getOrderDetailsController,
   updateOrderStatusController,
+  getAllOrdersController,
+  getActiveOrderByTableController,
 } from "./order.controller.js";
 import {
   authenticateJWT,
@@ -58,6 +60,19 @@ router.patch(
   ),
   validate(updateOrderStatusSchema),
   updateOrderStatusController
+);
+
+router.get(
+  "/",
+  authenticateJWT,
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.MANAGER,
+    UserRole.KITCHEN_STAFF,
+    UserRole.CASHIER,
+    UserRole.ADMIN
+  ),
+  getAllOrdersController
 );
 
 export default router;
