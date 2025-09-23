@@ -27,12 +27,65 @@ export const getActiveOrderByTableController = asyncHandler(
   }
 );
 
-// --- NEW ---
+export const createOrderController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+    const userId = req.user?.id;
+    const { tableId, items } = req.body;
+
+    if (!restaurantId || !userId) {
+      throw new ApiError(
+        httpStatus.UNAUTHORIZED,
+        "User not found for this restaurant"
+      );
+    }
+
+    const order = await orderService.createOrder(
+      { tableId, items },
+      restaurantId,
+      userId
+    );
+    res
+      .status(httpStatus.CREATED)
+      .json(
+        new ApiResponse(httpStatus.CREATED, order, "Order created successfully")
+      );
+  }
+);
+
 export const addItemsToOrderController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const restaurantId = req.user?.restaurantId;
     const { orderId } = req.params;
     const { items } = req.body;
+
+    if (!restaurantId) {
+      throw new ApiError(
+        httpStatus.UNAUTHORIZED,
+        "Restaurant not found for user"
+      );
+    }
+
+    if (!orderId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Order ID is required");
+    }
+
+    const order = await orderService.addItemsToOrder(
+      orderId,
+      items,
+      restaurantId
+    );
+    res
+      .status(httpStatus.OK)
+      .json(new ApiResponse(httpStatus.OK, order, "Items added successfully"));
+  }
+);
+
+export const getOrderDetailsController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+    const { orderId } = req.params;
+
     if (!restaurantId) {
       throw new ApiError(
         httpStatus.UNAUTHORIZED,
@@ -42,13 +95,8 @@ export const addItemsToOrderController = asyncHandler(
     if (!orderId) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Order ID is required");
     }
-    const order = await orderService.addItemsToOrder(
-      orderId,
-      items,
-      restaurantId!
-    );
-    res
-      .status(httpStatus.OK)
-      .json(new ApiResponse(httpStatus.OK, order, "Items added successfully"));
+
+    const order = await orderService.getOrderDetails(orderId, restaurantId);
+    res.status(httpStatus.OK).json(new ApiResponse(httpStatus.OK, order));
   }
 );

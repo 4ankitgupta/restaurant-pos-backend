@@ -11,6 +11,7 @@ import httpStatus from "http-status";
 // --- Import Routes ---
 import authRoutes from "./modules/auth/auth.routes.js";
 import orderRoutes from "./modules/order/order.routes.js";
+import chefRoutes from "./modules/chef/chef.routes.js";
 import paymentRoutes from "./modules/payment/payment.routes.js";
 import tableRoutes from "./modules/table/table.routes.js";
 import menuCategoryRoutes from "./modules/menuCategory/menuCategory.routes.js";
@@ -30,6 +31,7 @@ app.use(cors({ origin: "*", credentials: true }));
 const apiRouter = express.Router();
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/orders", orderRoutes);
+apiRouter.use("/chef", chefRoutes);
 apiRouter.use("/payments", paymentRoutes);
 apiRouter.use("/tables", tableRoutes);
 apiRouter.use("/menu-categories", menuCategoryRoutes);

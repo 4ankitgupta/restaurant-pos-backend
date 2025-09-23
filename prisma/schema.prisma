@@ -106,6 +106,7 @@ model Table {
 enum OrderStatus {
   PENDING
   PREPARING
+  PREPARED
   SERVED
   COMPLETED
   CANCELLED
