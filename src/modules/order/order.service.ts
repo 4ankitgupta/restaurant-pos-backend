@@ -14,32 +14,62 @@ export const createOrder = async (
 ) => {
   const { tableId, items } = orderData;
 
-  const table = await prisma.table.findFirst({
-    where: { id: tableId, restaurantId },
+  return prisma.$transaction(async (tx) => {
+    // 1. Fetch all necessary menu items at once for efficiency
+    const menuItems = await tx.menuItem.findMany({
+      where: {
+        id: { in: items.map((item) => item.menuItemId) },
+        restaurantId,
+      },
+    });
+
+    // Create a Map for quick price lookups
+    const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
+    let totalAmount = 0;
+
+    // 2. Calculate the total amount
+    for (const item of items) {
+      const menuItem = menuItemsById.get(item.menuItemId);
+      if (menuItem) {
+        totalAmount += Number(menuItem.price) * item.quantity;
+      }
+    }
+
+    // 3. Create the order and its items in a single operation
+    const newOrder = await tx.order.create({
+      data: {
+        restaurantId,
+        userId,
+        tableId,
+        totalAmount,
+        status: OrderStatus.ORDERED, // Set the correct initial status
+        orderItems: {
+          create: items.map((item) => ({
+            menuItemId: item.menuItemId,
+            quantity: item.quantity,
+            price: menuItemsById.get(item.menuItemId)?.price || 0,
+            restaurantId,
+          })),
+        },
+      },
+      include: {
+        orderItems: {
+          include: {
+            menuItem: true,
+          },
+        },
+        table: true,
+      },
+    });
+
+    // 4. Broadcast the NEW_ORDER event so the chef's screen updates
+    broadcastToRestaurant(restaurantId, {
+      type: "NEW_ORDER",
+      payload: newOrder,
+    });
+
+    return newOrder;
   });
-
-  if (!table) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Table not found");
-  }
-
-  const newOrder = await prisma.order.create({
-    data: {
-      restaurantId,
-      userId,
-      tableId,
-      totalAmount: 0,
-      status: OrderStatus.PENDING,
-    },
-  });
-
-  const updatedOrder = await addItemsToOrder(newOrder.id, items, restaurantId);
-
-  broadcastToRestaurant(restaurantId, {
-    type: "NEW_ORDER",
-    payload: updatedOrder,
-  });
-
-  return updatedOrder;
 };
 
 export const addItemsToOrder = async (
@@ -106,10 +136,6 @@ export const addItemsToOrder = async (
       where: { id: orderId },
       data: {
         totalAmount,
-        status:
-          order.status === OrderStatus.PENDING
-            ? OrderStatus.ORDERED
-            : order.status,
       },
       include: { orderItems: true },
     });
