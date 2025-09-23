@@ -11,7 +11,7 @@ export const createOrderSchema = z.object({
           quantity: z.number().int().positive(),
         })
       )
-      .optional(), // Items can be added later
+      .optional(),
   }),
 });
 
@@ -24,7 +24,7 @@ export const addItemsToOrderSchema = z.object({
           quantity: z.number().int().positive(),
         })
       )
-      .min(1), // Must add at least one item
+      .min(1),
   }),
   params: z.object({
     orderId: z.string().uuid(),
@@ -34,5 +34,8 @@ export const addItemsToOrderSchema = z.object({
 export const updateOrderStatusSchema = z.object({
   body: z.object({
     status: z.nativeEnum(OrderStatus),
+  }),
+  params: z.object({
+    orderId: z.string().uuid(),
   }),
 });

@@ -3,11 +3,13 @@ import { validate } from "../../middlewares/validate.middleware.js";
 import {
   createOrderSchema,
   addItemsToOrderSchema,
+  updateOrderStatusSchema,
 } from "./order.validation.js";
 import {
   createOrderController,
   addItemsToOrderController,
   getOrderDetailsController,
+  updateOrderStatusController,
 } from "./order.controller.js";
 import {
   authenticateJWT,
@@ -17,20 +19,18 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// Route to create a new order
 router.post(
   "/",
   authenticateJWT,
-  authorizeRoles(UserRole.WAITER, UserRole.CASHIER),
+  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
   validate(createOrderSchema),
   createOrderController
 );
 
-// Route to add items to an existing order
 router.post(
   "/:orderId/items",
   authenticateJWT,
-  authorizeRoles(UserRole.WAITER, UserRole.CASHIER),
+  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
   validate(addItemsToOrderSchema),
   addItemsToOrderController
 );
@@ -38,8 +38,26 @@ router.post(
 router.get(
   "/:orderId",
   authenticateJWT,
-  authorizeRoles(UserRole.WAITER, UserRole.CASHIER, UserRole.ADMIN),
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.CASHIER,
+    UserRole.ADMIN,
+    UserRole.MANAGER
+  ),
   getOrderDetailsController
+);
+
+router.patch(
+  "/:orderId/status",
+  authenticateJWT,
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.MANAGER,
+    UserRole.KITCHEN_STAFF,
+    UserRole.CASHIER
+  ),
+  validate(updateOrderStatusSchema),
+  updateOrderStatusController
 );
 
 export default router;

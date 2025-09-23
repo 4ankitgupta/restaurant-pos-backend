@@ -100,3 +100,28 @@ export const getOrderDetailsController = asyncHandler(
     res.status(httpStatus.OK).json(new ApiResponse(httpStatus.OK, order));
   }
 );
+
+export const updateOrderStatusController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { orderId } = req.params;
+    const { status } = req.body;
+    const restaurantId = req.user?.restaurantId;
+
+    if (!restaurantId) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "User not authenticated");
+    }
+
+    if (!orderId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Order ID is required");
+    }
+
+    const order = await orderService.updateOrderStatus(
+      orderId,
+      status,
+      restaurantId
+    );
+    res
+      .status(httpStatus.OK)
+      .json(new ApiResponse(httpStatus.OK, order, "Order status updated"));
+  }
+);

@@ -105,6 +105,7 @@ model Table {
 
 enum OrderStatus {
   PENDING
+  ORDERED
   PREPARING
   PREPARED
   SERVED
@@ -116,6 +117,7 @@ enum PaymentStatus {
   UNPAID
   PAID
   PARTIAL
+  REFUNDED
 }
 
 model Order {
