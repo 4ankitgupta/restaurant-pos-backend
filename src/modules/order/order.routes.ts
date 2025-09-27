@@ -58,7 +58,7 @@ router.patch(
     UserRole.KITCHEN_STAFF,
     UserRole.CASHIER
   ),
-  validate(updateOrderStatusSchema),
+  validate(updateOrderStatusSchema), // You will need to create this validation or modify it
   updateOrderStatusController
 );
 

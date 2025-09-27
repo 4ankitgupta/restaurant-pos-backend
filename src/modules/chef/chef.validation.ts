@@ -1,13 +1,13 @@
 // src/modules/chef/chef.validation.ts
 
 import { z } from "zod";
-import { OrderStatus } from "@prisma/client";
+import { OrderItemStatus } from "@prisma/client";
 
-export const updateOrderStatusSchema = z.object({
+export const updateOrderItemStatusSchema = z.object({
   body: z.object({
-    status: z.enum([OrderStatus.PREPARED]), // Chef can only set status to PREPARED
+    status: z.enum([OrderItemStatus.PREPARED, OrderItemStatus.CANCELLED]), // Chef can set status to PREPARED or CANCELLED
   }),
   params: z.object({
-    orderId: z.string().uuid(),
+    orderItemId: z.string().uuid(),
   }),
 });

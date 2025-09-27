@@ -1,7 +1,7 @@
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
-import { OrderStatus, type MenuItem } from "@prisma/client";
+import { OrderStatus, OrderItemStatus, type MenuItem } from "@prisma/client";
 import { broadcastToRestaurant } from "../../websocketServer.js";
 
 export const createOrder = async (
@@ -42,12 +42,16 @@ export const createOrder = async (
         userId,
         tableId,
         totalAmount,
-        status: OrderStatus.ORDERED, // Set the correct initial status
+        status:
+          items && items.length > 0
+            ? OrderStatus.IN_PROGRESS
+            : OrderStatus.PENDING,
         orderItems: {
           create: items.map((item) => ({
             menuItemId: item.menuItemId,
             quantity: item.quantity,
             price: menuItemsById.get(item.menuItemId)?.price || 0,
+            status: OrderItemStatus.ORDERED, // Set the correct initial status
             restaurantId,
           })),
         },
@@ -111,44 +115,57 @@ export const addItemsToOrder = async (
       const itemTotal = menuItem.price.mul(item.quantity);
       totalAmount = totalAmount.add(itemTotal);
 
-      const existingOrderItem = await tx.orderItem.findFirst({
-        where: { orderId, menuItemId: item.menuItemId },
+      // The previous logic updated existing order items. With the new schema,
+      // you requested new entries for additional items, so we'll just create.
+      await tx.orderItem.create({
+        data: {
+          orderId,
+          restaurantId,
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          price: menuItem.price,
+          status: OrderItemStatus.ORDERED, // Set the correct initial status
+        },
       });
-
-      if (existingOrderItem) {
-        await tx.orderItem.update({
-          where: { id: existingOrderItem.id },
-          data: { quantity: { increment: item.quantity } },
-        });
-      } else {
-        await tx.orderItem.create({
-          data: {
-            orderId,
-            restaurantId,
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            price: menuItem.price,
-          },
-        });
-      }
     }
-    const updatedOrder = await tx.order.update({
+
+    // Update the overall order status to IN_PROGRESS if it was PENDING
+    let updatedOrder = order;
+    if (order.status === OrderStatus.PENDING) {
+      updatedOrder = await tx.order.update({
+        where: { id: orderId },
+        data: { status: OrderStatus.IN_PROGRESS },
+      });
+    }
+
+    // Recalculate the total amount
+    const newTotalAmount = await tx.orderItem.aggregate({
+      _sum: { price: true, quantity: true },
+      where: { orderId: orderId },
+    });
+
+    // Update the order with the new total amount
+    const finalOrder = await tx.order.update({
       where: { id: orderId },
       data: {
-        totalAmount,
+        totalAmount: totalAmount,
       },
       include: { orderItems: true },
     });
 
     broadcastToRestaurant(restaurantId, {
       type: "ORDER_ITEMS_UPDATED",
-      payload: updatedOrder,
+      payload: finalOrder,
     });
 
-    return updatedOrder;
+    return finalOrder;
   });
 };
 
+// This function is no longer needed in its original form since order status is derived from item statuses.
+// The new logic for updating order status is handled within the updateOrderItemStatus function in chef.service.ts
+// or can be manually updated in the front-end logic. For now, this is kept for reference but should be removed or
+// heavily modified if used.
 export const updateOrderStatus = async (
   orderId: string,
   status: OrderStatus,

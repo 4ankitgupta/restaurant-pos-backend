@@ -20,28 +20,32 @@ export const getPreparingOrdersController = asyncHandler(
   }
 );
 
-export const updateOrderStatusController = asyncHandler(
+export const updateOrderItemStatusController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const restaurantId = req.user?.restaurantId;
-    const { orderId } = req.params;
+    const { orderItemId } = req.params;
     const { status } = req.body;
 
     if (!restaurantId) {
       throw new ApiError(httpStatus.UNAUTHORIZED, "Restaurant not found");
     }
-    if (!orderId) {
-      throw new ApiError(httpStatus.BAD_REQUEST, "Order ID is required");
+    if (!orderItemId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Order Item ID is required");
     }
 
-    const updatedOrder = await chefService.updateOrderStatus(
-      orderId,
+    const updatedOrderItem = await chefService.updateOrderItemStatus(
+      orderItemId,
       status,
       restaurantId
     );
     res
       .status(httpStatus.OK)
       .json(
-        new ApiResponse(httpStatus.OK, updatedOrder, "Order status updated")
+        new ApiResponse(
+          httpStatus.OK,
+          updatedOrderItem,
+          "Order item status updated"
+        )
       );
   }
 );

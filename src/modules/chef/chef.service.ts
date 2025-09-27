@@ -3,16 +3,27 @@
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
-import { OrderStatus } from "@prisma/client";
+import { OrderItemStatus } from "@prisma/client";
+import { broadcastToRestaurant } from "../../websocketServer.js";
 
+/**
+ * Gets all orders that have at least one item in the 'PREPARING' state.
+ */
 export const getPreparingOrders = async (restaurantId: string) => {
   return prisma.order.findMany({
     where: {
       restaurantId,
-      status: OrderStatus.PREPARING,
+      orderItems: {
+        some: {
+          status: OrderItemStatus.PREPARING,
+        },
+      },
     },
     include: {
       orderItems: {
+        where: {
+          status: OrderItemStatus.PREPARING,
+        },
         include: {
           menuItem: true,
         },
@@ -20,42 +31,57 @@ export const getPreparingOrders = async (restaurantId: string) => {
       table: true,
     },
     orderBy: {
-      createdAt: "asc", // Oldest orders first
+      createdAt: "asc", // Oldest orders with preparing items first
     },
   });
 };
 
-export const updateOrderStatus = async (
-  orderId: string,
-  status: OrderStatus,
+/**
+ * Updates the status of a specific order item.
+ */
+export const updateOrderItemStatus = async (
+  orderItemId: string,
+  status: OrderItemStatus,
   restaurantId: string
 ) => {
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, restaurantId },
+  const orderItem = await prisma.orderItem.findFirst({
+    where: { id: orderItemId, restaurantId },
   });
 
-  if (!order) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+  if (!orderItem) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Order item not found");
   }
 
-  // Add any specific logic here, for example, a chef should only be able
-  // to change the status from PREPARING to PREPARED.
-  if (order.status !== OrderStatus.PREPARING) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      `Order is not in 'PREPARING' state.`
-    );
-  }
+  // Logic for status transitions can be added here
+  // For example:
+  // if (orderItem.status === OrderItemStatus.ORDERED && status === OrderItemStatus.PREPARING) { ... }
+  // You mentioned the logic would be decided later. This is where it would go.
 
-  if (status !== OrderStatus.PREPARED) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      `Chef can only mark order as 'PREPARED'.`
-    );
-  }
-
-  return prisma.order.update({
-    where: { id: orderId },
+  const updatedOrderItem = await prisma.orderItem.update({
+    where: { id: orderItemId },
     data: { status },
+    include: { order: { include: { orderItems: true, table: true } } },
   });
+
+  // Update the overall order status based on item statuses
+  const allItems = updatedOrderItem.order.orderItems;
+  const allItemsServed = allItems.every(
+    (item) =>
+      item.status === OrderItemStatus.SERVED ||
+      item.status === OrderItemStatus.CANCELLED
+  );
+  if (allItemsServed) {
+    await prisma.order.update({
+      where: { id: updatedOrderItem.orderId },
+      data: { status: "COMPLETED" },
+    });
+  }
+
+  // Broadcast the update to all connected clients
+  broadcastToRestaurant(restaurantId, {
+    type: "ORDER_ITEM_STATUS_UPDATE",
+    payload: updatedOrderItem,
+  });
+
+  return updatedOrderItem;
 };

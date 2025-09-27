@@ -2,10 +2,10 @@
 
 import { Router } from "express";
 import { validate } from "../../middlewares/validate.middleware.js";
-import { updateOrderStatusSchema } from "./chef.validation.js";
+import { updateOrderItemStatusSchema } from "./chef.validation.js";
 import {
   getPreparingOrdersController,
-  updateOrderStatusController,
+  updateOrderItemStatusController,
 } from "./chef.controller.js";
 import {
   authenticateJWT,
@@ -15,7 +15,7 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// Route for the chef to get all orders that are currently "PREPARING"
+// Route for the chef to get all orders that have at least one item in 'PREPARING'
 router.get(
   "/orders/preparing",
   authenticateJWT,
@@ -23,13 +23,13 @@ router.get(
   getPreparingOrdersController
 );
 
-// Route for the chef to update the status of an order (e.g., to "PREPARED")
+// Route for the chef to update the status of an order item (e.g., to "PREPARED")
 router.patch(
-  "/orders/:orderId/status",
+  "/order-items/:orderItemId/status",
   authenticateJWT,
   authorizeRoles(UserRole.KITCHEN_STAFF, UserRole.ADMIN),
-  validate(updateOrderStatusSchema),
-  updateOrderStatusController
+  validate(updateOrderItemStatusSchema),
+  updateOrderItemStatusController
 );
 
 export default router;

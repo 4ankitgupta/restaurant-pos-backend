@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, OrderItemStatus } from "@prisma/client";
 
 export const createOrderSchema = z.object({
   body: z.object({
@@ -37,5 +37,14 @@ export const updateOrderStatusSchema = z.object({
   }),
   params: z.object({
     orderId: z.string().uuid(),
+  }),
+});
+
+export const updateOrderItemStatusSchema = z.object({
+  body: z.object({
+    status: z.nativeEnum(OrderItemStatus),
+  }),
+  params: z.object({
+    orderItemId: z.string().uuid(),
   }),
 });
