@@ -18,6 +18,7 @@ import menuCategoryRoutes from "./modules/menuCategory/menuCategory.routes.js";
 import menuItemRoutes from "./modules/menuItem/menuItem.routes.js";
 import inventoryRoutes from "./modules/inventory/inventory.routes.js";
 import userRoutes from "./modules/users/users.routes.js";
+import waiterRoutes from "./modules/waiter/waiter.routes.js";
 // ... import other routes as you create them
 
 const app: Application = express();
@@ -38,6 +39,7 @@ apiRouter.use("/menu-categories", menuCategoryRoutes);
 apiRouter.use("/menu-items", menuItemRoutes);
 apiRouter.use("/inventory", inventoryRoutes);
 apiRouter.use("/users", userRoutes);
+apiRouter.use("/waiter", waiterRoutes);
 // ... use other routes
 
 app.use("/api/v1", apiRouter);

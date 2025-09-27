@@ -1,17 +1,7 @@
 import { Router } from "express";
-import { validate } from "../../middlewares/validate.middleware.js";
 import {
-  createOrderSchema,
-  addItemsToOrderSchema,
-  updateOrderStatusSchema,
-} from "./order.validation.js";
-import {
-  createOrderController,
-  addItemsToOrderController,
   getOrderDetailsController,
-  updateOrderStatusController,
   getAllOrdersController,
-  getActiveOrderByTableController,
 } from "./order.controller.js";
 import {
   authenticateJWT,
@@ -20,22 +10,6 @@ import {
 import { UserRole } from "@prisma/client";
 
 const router = Router();
-
-router.post(
-  "/",
-  authenticateJWT,
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
-  validate(createOrderSchema),
-  createOrderController
-);
-
-router.post(
-  "/:orderId/items",
-  authenticateJWT,
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
-  validate(addItemsToOrderSchema),
-  addItemsToOrderController
-);
 
 router.get(
   "/:orderId",
@@ -47,19 +21,6 @@ router.get(
     UserRole.MANAGER
   ),
   getOrderDetailsController
-);
-
-router.patch(
-  "/:orderId/status",
-  authenticateJWT,
-  authorizeRoles(
-    UserRole.WAITER,
-    UserRole.MANAGER,
-    UserRole.KITCHEN_STAFF,
-    UserRole.CASHIER
-  ),
-  validate(updateOrderStatusSchema), // You will need to create this validation or modify it
-  updateOrderStatusController
 );
 
 router.get(
