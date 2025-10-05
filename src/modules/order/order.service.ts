@@ -132,3 +132,22 @@ export const addItemsToOrder = async (
 
   return updatedOrderWithItems;
 };
+
+export const getAllOrders = async (restaurantId: string) => {
+  return prisma.order.findMany({
+    where: {
+      restaurantId,
+    },
+    include: {
+      orderItems: {
+        include: {
+          menuItem: true,
+        },
+      },
+      table: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};
