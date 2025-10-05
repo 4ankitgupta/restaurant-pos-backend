@@ -7,9 +7,13 @@ import { ApiError } from "../../utils/ApiError.js";
 import config from "../../config/index.js";
 
 // Generate JWT Tokens
-const generateTokens = (user: { id: string; role: UserRole }) => {
+const generateTokens = (user: {
+  id: string;
+  role: UserRole;
+  restaurantId: string;
+}) => {
   const accessToken = jwt.sign(
-    { id: user.id, role: user.role },
+    { id: user.id, role: user.role, restaurantId: user.restaurantId },
     config.jwt.accessTokenSecret,
     { expiresIn: config.jwt.accessTokenExpire }
   );
@@ -62,13 +66,23 @@ export const loginUser = async (credentials: any) => {
     throw new ApiError(httpStatus.FORBIDDEN, "User account is not active");
   }
 
-  const tokens = generateTokens({ id: user.id, role: user.role });
+  const tokens = generateTokens({
+    id: user.id,
+    role: user.role,
+    restaurantId: user.restaurantId,
+  });
 
   // You would typically save the refresh token in the database against the user
   // For simplicity here, we are just returning it.
 
   return {
-    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      restaurantId: user.restaurantId,
+    },
     tokens,
   };
 };
