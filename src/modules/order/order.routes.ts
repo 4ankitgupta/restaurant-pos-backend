@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getOrderDetailsController,
   getAllOrdersController,
+  getActiveOrdersController,
 } from "./order.controller.js";
 import {
   authenticateJWT,
@@ -34,6 +35,13 @@ router.get(
     UserRole.ADMIN
   ),
   getAllOrdersController
+);
+
+router.get(
+  "/active",
+  authenticateJWT,
+  authorizeRoles(UserRole.KITCHEN_STAFF, UserRole.ADMIN, UserRole.MANAGER),
+  getActiveOrdersController
 );
 
 export default router;

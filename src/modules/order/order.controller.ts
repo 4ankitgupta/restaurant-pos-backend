@@ -6,6 +6,20 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { type AuthRequest } from "../../middlewares/auth.middleware.js";
 import { ApiError } from "../../utils/ApiError.js";
 
+export const getActiveOrdersController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+    if (!restaurantId) {
+      throw new ApiError(
+        httpStatus.UNAUTHORIZED,
+        "Restaurant not found for user"
+      );
+    }
+    const orders = await orderService.getActiveOrders(restaurantId!);
+    res.status(httpStatus.OK).json(new ApiResponse(httpStatus.OK, orders));
+  }
+);
+
 export const getActiveOrderByTableController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const restaurantId = req.user?.restaurantId;
