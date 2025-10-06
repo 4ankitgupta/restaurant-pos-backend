@@ -14,8 +14,8 @@ export const validate =
       });
       return next();
     } catch (error: any) {
-      const validationErrors = error.errors.map((err: any) => ({
-        field: err.path.join("."),
+      const validationErrors = error.issues.map((err: any) => ({
+        field: err.path[err.path.length - 1],
         message: err.message,
       }));
       next(

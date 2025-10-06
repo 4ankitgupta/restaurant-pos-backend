@@ -72,9 +72,6 @@ export const loginUser = async (credentials: any) => {
     restaurantId: user.restaurantId,
   });
 
-  // You would typically save the refresh token in the database against the user
-  // For simplicity here, we are just returning it.
-
   return {
     user: {
       id: user.id,
@@ -85,4 +82,52 @@ export const loginUser = async (credentials: any) => {
     },
     tokens,
   };
+};
+
+// Update user
+export const updateUser = async (
+  userId: string,
+  userData: any,
+  restaurantId: string
+) => {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, restaurantId },
+  });
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: userData,
+    select: { id: true, name: true, email: true, role: true, isActive: true },
+  });
+
+  return updatedUser;
+};
+
+// Delete user
+export const deleteUser = async (
+  userId: string,
+  restaurantId: string,
+  invokingUser: { id: string }
+) => {
+  if (invokingUser.id === userId) {
+    throw new ApiError(
+      httpStatus.FORBIDDEN,
+      "Admin users cannot delete themselves."
+    );
+  }
+  const user = await prisma.user.findFirst({
+    where: { id: userId, restaurantId },
+  });
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  await prisma.user.delete({ where: { id: userId } });
+
+  return { message: "User deleted successfully" };
 };
