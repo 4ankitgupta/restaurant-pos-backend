@@ -1,3 +1,4 @@
+// src/app.ts
 import express, {
   type Application,
   type Request,
@@ -19,7 +20,9 @@ import menuItemRoutes from "./modules/menuItem/menuItem.routes.js";
 import inventoryRoutes from "./modules/inventory/inventory.routes.js";
 import userRoutes from "./modules/users/users.routes.js";
 import waiterRoutes from "./modules/waiter/waiter.routes.js";
-// ... import other routes as you create them
+import supplierRoutes from "./modules/supplier/supplier.routes.js"; // <-- ADD THIS
+import purchaseOrderRoutes from "./modules/purchaseOrder/purchaseOrder.routes.js"; // <-- ADD THIS
+import stockLogRoutes from "./modules/stockLog/stockLog.routes.js"; // <-- ADD THIS
 
 const app: Application = express();
 
@@ -40,7 +43,9 @@ apiRouter.use("/menu-items", menuItemRoutes);
 apiRouter.use("/inventory", inventoryRoutes);
 apiRouter.use("/users", userRoutes);
 apiRouter.use("/waiter", waiterRoutes);
-// ... use other routes
+apiRouter.use("/suppliers", supplierRoutes); // <-- ADD THIS
+apiRouter.use("/purchase-orders", purchaseOrderRoutes); // <-- ADD THIS
+apiRouter.use("/stock-logs", stockLogRoutes); // <-- ADD THIS
 
 app.use("/api/v1", apiRouter);
 
