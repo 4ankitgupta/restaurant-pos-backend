@@ -1,5 +1,6 @@
 import prisma from "../../db/index.js";
 import { type CreatePurchaseOrderDto } from "./purchaseOrder.validation.js";
+import { StockChangeType } from "@prisma/client";
 
 export const createPurchaseOrder = async (
   data: CreatePurchaseOrderDto,
@@ -22,13 +23,13 @@ export const createPurchaseOrder = async (
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.quantity * item.unitPrice,
-            restaurantId, // Add restaurantId to each purchase item
+            restaurantId,
           })),
         },
       },
     });
 
-    // 2. Update the stock for each inventory item
+    // 2. Update the stock for each inventory item and create a stock log
     for (const item of items) {
       await tx.inventoryItem.update({
         where: { id: item.inventoryItemId },
@@ -36,6 +37,17 @@ export const createPurchaseOrder = async (
           currentStock: {
             increment: item.quantity,
           },
+        },
+      });
+
+      await tx.stockLog.create({
+        data: {
+          restaurantId,
+          inventoryItemId: item.inventoryItemId,
+          changeType: StockChangeType.ADD,
+          quantity: item.quantity,
+          purchaseOrderId: purchaseOrder.id,
+          remarks: `Stock added from purchase order ${purchaseOrder.id}`,
         },
       });
     }

@@ -106,3 +106,30 @@ export const deleteInventoryItemController = asyncHandler(
       );
   }
 );
+
+export const adjustStockController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const restaurantId = req.user?.restaurantId;
+    if (!id) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Inventory Item ID is required"
+      );
+    }
+    const updatedInventoryItem = await inventoryService.adjustStock(
+      id,
+      req.body,
+      restaurantId!
+    );
+    res
+      .status(httpStatus.OK)
+      .json(
+        new ApiResponse(
+          httpStatus.OK,
+          updatedInventoryItem,
+          "Stock adjusted successfully"
+        )
+      );
+  }
+);

@@ -5,6 +5,7 @@ import {
   getAllInventoryItemsController,
   updateInventoryItemController,
   getInventoryItemByIdController,
+  adjustStockController,
 } from "./inventory.controller.js";
 import {
   authenticateJWT,
@@ -15,6 +16,7 @@ import { validate } from "../../middlewares/validate.middleware.js";
 import {
   createInventoryItemSchema,
   updateInventoryItemSchema,
+  adjustStockSchema,
 } from "./inventory.validation.js";
 
 const router = Router();
@@ -31,5 +33,9 @@ router
   .get(getInventoryItemByIdController)
   .patch(validate(updateInventoryItemSchema), updateInventoryItemController)
   .delete(deleteInventoryItemController);
+
+router
+  .route("/:id/adjust-stock")
+  .post(validate(adjustStockSchema), adjustStockController);
 
 export default router;

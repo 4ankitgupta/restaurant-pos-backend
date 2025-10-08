@@ -222,6 +222,8 @@ model PurchaseOrder {
   purchaseDate  DateTime       @default(now())
   purchaseItems PurchaseItem[]
   createdAt     DateTime       @default(now())
+  
+  stockLogs       StockLog[]
 }
 
 model PurchaseItem {
@@ -244,6 +246,7 @@ enum StockChangeType {
   REMOVE
   ADJUST
   WASTAGE
+  USAGE
 }
 
 model StockLog {
@@ -255,6 +258,9 @@ model StockLog {
   changeType      StockChangeType
   quantity        Float
   remarks         String?
+  
+  purchaseOrder   PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String?
   createdAt       DateTime        @default(now())
 }
 
