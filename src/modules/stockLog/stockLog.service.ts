@@ -26,6 +26,7 @@ export const createStockLog = async (
       case StockChangeType.ADD:
         updateOperation = { increment: quantity };
         break;
+      case StockChangeType.USAGE:
       case StockChangeType.REMOVE:
       case StockChangeType.WASTAGE:
         updateOperation = { decrement: quantity };

@@ -125,7 +125,7 @@ export const adjustStock = async (
         inventoryItemId: id,
         changeType,
         quantity,
-        remarks,
+        remarks: "Stokk adjusted",
       },
     });
 
