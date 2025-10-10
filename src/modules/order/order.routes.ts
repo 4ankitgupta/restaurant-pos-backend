@@ -1,7 +1,9 @@
 import { Router } from "express";
-import { validate } from "../../middlewares/validate.middleware.js";
-import { addItemsToOrderSchema } from "./order.validation.js"; // Renamed
-import { addItemsToOrderController } from "./order.controller.js"; // Renamed
+import {
+  getOrderDetailsController,
+  getAllOrdersController,
+  getActiveOrdersController,
+} from "./order.controller.js";
 import {
   authenticateJWT,
   authorizeRoles,
@@ -10,13 +12,36 @@ import { UserRole } from "@prisma/client";
 
 const router = Router();
 
-// This route now adds items to an existing order
-router.post(
-  "/:orderId/items",
+router.get(
+  "/:orderId",
   authenticateJWT,
-  authorizeRoles(UserRole.WAITER, UserRole.CASHIER),
-  validate(addItemsToOrderSchema),
-  addItemsToOrderController
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.CASHIER,
+    UserRole.ADMIN,
+    UserRole.MANAGER
+  ),
+  getOrderDetailsController
+);
+
+router.get(
+  "/",
+  authenticateJWT,
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.MANAGER,
+    UserRole.KITCHEN_STAFF,
+    UserRole.CASHIER,
+    UserRole.ADMIN
+  ),
+  getAllOrdersController
+);
+
+router.get(
+  "/active",
+  authenticateJWT,
+  authorizeRoles(UserRole.KITCHEN_STAFF, UserRole.ADMIN, UserRole.MANAGER),
+  getActiveOrdersController
 );
 
 export default router;

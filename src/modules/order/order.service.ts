@@ -1,16 +1,53 @@
+// src/modules/order/order.service.ts
+
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
-import { OrderStatus, TableStatus } from "@prisma/client";
+import { OrderStatus, OrderItemStatus } from "@prisma/client";
+import { broadcastToRoom } from "../../websocket/websocket.js";
 
-// --- NEW ---
+export const getActiveOrders = async (restaurantId: string) => {
+  return prisma.order.findMany({
+    where: {
+      restaurantId,
+      status: {
+        // Correctly fetches IN_PROGRESS orders for the kitchen
+        in: [OrderStatus.IN_PROGRESS, OrderStatus.PENDING],
+      },
+    },
+    include: {
+      table: true,
+      orderItems: {
+        where: {
+          // Fetches only items the kitchen needs to act on
+          status: {
+            in: [OrderItemStatus.ORDERED, OrderItemStatus.PREPARING],
+          },
+        },
+        include: {
+          menuItem: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+  });
+};
+
 export const getOrderDetails = async (
   orderId: string,
   restaurantId: string
 ) => {
   const order = await prisma.order.findFirst({
     where: { id: orderId, restaurantId },
-    include: { orderItems: { include: { menuItem: true } } },
+    include: {
+      orderItems: {
+        include: {
+          menuItem: true,
+        },
+      },
+    },
   });
   if (!order) {
     throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
@@ -18,7 +55,6 @@ export const getOrderDetails = async (
   return order;
 };
 
-// --- NEW ---
 export const getActiveOrderByTable = async (
   tableId: string,
   restaurantId: string
@@ -29,6 +65,13 @@ export const getActiveOrderByTable = async (
       restaurantId,
       status: {
         notIn: [OrderStatus.COMPLETED, OrderStatus.CANCELLED],
+      },
+    },
+    include: {
+      orderItems: {
+        include: {
+          menuItem: true,
+        },
       },
     },
   });
@@ -42,7 +85,6 @@ export const getActiveOrderByTable = async (
   return order;
 };
 
-// --- MODIFIED: Renamed and repurposed from createOrder ---
 export const addItemsToOrder = async (
   orderId: string,
   items: Array<{ menuItemId: string; quantity: number }>,
@@ -64,30 +106,26 @@ export const addItemsToOrder = async (
     );
   }
 
-  // Use a transaction to ensure atomicity
-  return prisma.$transaction(async (tx) => {
+  const updatedOrderWithItems = await prisma.$transaction(async (tx) => {
     let totalAmount = order.totalAmount;
 
     for (const item of items) {
       const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
-      if (!menuItem) continue; // Should not happen due to the check above
+      if (!menuItem) continue;
 
-      const itemTotal = menuItem.price.mul(item.quantity); // price * quantity
+      const itemTotal = menuItem.price.mul(item.quantity);
       totalAmount = totalAmount.add(itemTotal);
 
-      // Check if item already exists in the order
       const existingOrderItem = await tx.orderItem.findFirst({
         where: { orderId, menuItemId: item.menuItemId },
       });
 
       if (existingOrderItem) {
-        // Update quantity if item exists
         await tx.orderItem.update({
           where: { id: existingOrderItem.id },
           data: { quantity: { increment: item.quantity } },
         });
       } else {
-        // Create new order item if it doesn't exist
         await tx.orderItem.create({
           data: {
             orderId,
@@ -95,18 +133,53 @@ export const addItemsToOrder = async (
             menuItemId: item.menuItemId,
             quantity: item.quantity,
             price: menuItem.price,
+            status: OrderItemStatus.ORDERED,
           },
         });
       }
     }
 
-    // Update the order's total amount
     const updatedOrder = await tx.order.update({
       where: { id: orderId },
-      data: { totalAmount, status: OrderStatus.PREPARING }, // Move to preparing when items are added
-      include: { orderItems: true },
+      // FIX: Changed status to IN_PROGRESS to match your schema and logic
+      data: { totalAmount, status: OrderStatus.IN_PROGRESS },
+      include: {
+        orderItems: {
+          include: {
+            menuItem: true,
+          },
+        },
+      },
     });
 
     return updatedOrder;
+  });
+
+  // FIX: Moved broadcast and return inside the function scope
+  broadcastToRoom(
+    `restaurant:${restaurantId}`,
+    "ORDER_ITEMS_UPDATED",
+    updatedOrderWithItems
+  );
+
+  return updatedOrderWithItems;
+};
+
+export const getAllOrders = async (restaurantId: string) => {
+  return prisma.order.findMany({
+    where: {
+      restaurantId,
+    },
+    include: {
+      orderItems: {
+        include: {
+          menuItem: true,
+        },
+      },
+      table: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 };

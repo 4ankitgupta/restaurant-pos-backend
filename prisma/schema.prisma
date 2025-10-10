@@ -43,6 +43,7 @@ model Restaurant {
   purchaseItems   PurchaseItem[]
   suppliers       Supplier[]
   expenses        Expense[]
+  stockLogs       StockLog[]
 }
 
 model User {
@@ -105,9 +106,16 @@ model Table {
 
 enum OrderStatus {
   PENDING
-  PREPARING
-  SERVED
+  IN_PROGRESS
   COMPLETED
+  CANCELLED
+}
+
+enum OrderItemStatus {
+  ORDERED
+  PREPARING
+  PREPARED
+  SERVED
   CANCELLED
 }
 
@@ -115,6 +123,7 @@ enum PaymentStatus {
   UNPAID
   PAID
   PARTIAL
+  REFUNDED
 }
 
 model Order {
@@ -135,16 +144,17 @@ model Order {
 }
 
 model OrderItem {
-  id           String     @id @default(uuid())
+  id           String          @id @default(uuid())
   quantity     Int
   price        Decimal // Price at the time of order
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  status       OrderItemStatus @default(ORDERED) // New status field for each item
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  restaurant   Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   restaurantId String
-  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId      String
-  menuItem     MenuItem?  @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
+  menuItem     MenuItem?       @relation(fields: [menuItemId], references: [id], onDelete: SetNull)
   menuItemId   String?
 }
 
@@ -175,57 +185,83 @@ model Payment {
 }
 
 model InventoryItem {
-  id           String     @id @default(uuid())
-  name         String
-  unit         String // e.g., kg, liter, piece
-  quantity     Decimal    @default(0.0)
-  threshold    Decimal    @default(0.0)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
+  id            String         @id @default(uuid())
+  name          String
+  unit          String // e.g., kg, liter, piece
+  currentStock  Float          @default(0)
+  reorderLevel  Float          @default(0)
+  lastUpdated   DateTime       @updatedAt
+  restaurant    Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
   purchaseItems PurchaseItem[]
+  stockLogs     StockLog[]
+  createdAt     DateTime       @default(now())
 }
 
 model Supplier {
   id            String          @id @default(uuid())
   name          String
+  contactPerson String?
   phone         String?
   email         String?
   address       String?
   restaurant    Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   restaurantId  String
   purchaseOrders PurchaseOrder[]
-}
-
-enum PurchaseStatus {
-  PENDING
-  RECEIVED
-  CANCELLED
+  createdAt     DateTime        @default(now())
 }
 
 model PurchaseOrder {
-  id           String          @id @default(uuid())
-  totalAmount  Decimal?
-  status       PurchaseStatus  @default(PENDING)
-  createdAt    DateTime        @default(now())
-  restaurant   Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  supplier     Supplier?       @relation(fields: [supplierId], references: [id])
-  supplierId   String?
+  id            String         @id @default(uuid())
+  supplier      Supplier       @relation(fields: [supplierId], references: [id])
+  supplierId    String
+  restaurant    Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  invoiceNumber String?
+  totalAmount   Float
+  purchaseDate  DateTime       @default(now())
   purchaseItems PurchaseItem[]
+  createdAt     DateTime       @default(now())
+  
+  stockLogs       StockLog[]
 }
 
 model PurchaseItem {
-  id            String        @id @default(uuid())
-  quantity      Decimal?
-  price         Decimal?
-  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  id              String        @id @default(uuid())
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   purchaseOrderId String
-  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
   inventoryItemId String
+  quantity        Float
+  unitPrice       Float
+  totalPrice      Float
+
+  // FIX: Added the missing relation back to the Restaurant model
+  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId    String
+}
+
+enum StockChangeType {
+  ADD
+  REMOVE
+  ADJUST
+  WASTAGE
+  USAGE
+}
+
+model StockLog {
+  id              String          @id @default(uuid())
+  restaurant      Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId    String
+  inventoryItem   InventoryItem   @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  inventoryItemId String
+  changeType      StockChangeType
+  quantity        Float
+  remarks         String?
+  
+  purchaseOrder   PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrderId String?
+  createdAt       DateTime        @default(now())
 }
 
 model Expense {

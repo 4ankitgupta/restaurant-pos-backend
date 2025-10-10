@@ -6,6 +6,20 @@ import { ApiResponse } from "../../utils/ApiResponse.js";
 import { type AuthRequest } from "../../middlewares/auth.middleware.js";
 import { ApiError } from "../../utils/ApiError.js";
 
+export const getActiveOrdersController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+    if (!restaurantId) {
+      throw new ApiError(
+        httpStatus.UNAUTHORIZED,
+        "Restaurant not found for user"
+      );
+    }
+    const orders = await orderService.getActiveOrders(restaurantId!);
+    res.status(httpStatus.OK).json(new ApiResponse(httpStatus.OK, orders));
+  }
+);
+
 export const getActiveOrderByTableController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const restaurantId = req.user?.restaurantId;
@@ -27,12 +41,11 @@ export const getActiveOrderByTableController = asyncHandler(
   }
 );
 
-// --- NEW ---
-export const addItemsToOrderController = asyncHandler(
+export const getOrderDetailsController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const restaurantId = req.user?.restaurantId;
     const { orderId } = req.params;
-    const { items } = req.body;
+
     if (!restaurantId) {
       throw new ApiError(
         httpStatus.UNAUTHORIZED,
@@ -42,13 +55,21 @@ export const addItemsToOrderController = asyncHandler(
     if (!orderId) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Order ID is required");
     }
-    const order = await orderService.addItemsToOrder(
-      orderId,
-      items,
-      restaurantId!
-    );
-    res
-      .status(httpStatus.OK)
-      .json(new ApiResponse(httpStatus.OK, order, "Items added successfully"));
+
+    const order = await orderService.getOrderDetails(orderId, restaurantId);
+    res.status(httpStatus.OK).json(new ApiResponse(httpStatus.OK, order));
+  }
+);
+
+export const getAllOrdersController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+
+    if (!restaurantId) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "User not authenticated");
+    }
+
+    const orders = await orderService.getAllOrders(restaurantId);
+    res.status(httpStatus.OK).json(new ApiResponse(httpStatus.OK, orders));
   }
 );

@@ -118,7 +118,9 @@ export class MenuItemController {
       if (!deleted) {
         return res.status(404).json({ message: "Menu item not found" });
       }
-      return res.status(204).send();
+      return res
+        .status(200)
+        .json({ message: "Menu item deleted successfully" });
     } catch (error) {
       return res.status(500).json({ message: "Error deleting menu item" });
     }
