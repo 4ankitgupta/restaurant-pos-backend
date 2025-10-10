@@ -1,6 +1,8 @@
 import prisma from "../../db/index.js";
 import { StockChangeType } from "@prisma/client";
 import { type CreateStockLogDto } from "./stockLog.validation.js";
+import { ApiError } from "../../utils/ApiError.js";
+import httpStatus from "http-status";
 
 export const createStockLog = async (
   data: CreateStockLogDto,
@@ -9,6 +11,14 @@ export const createStockLog = async (
   const { inventoryItemId, changeType, quantity, remarks } = data;
 
   return prisma.$transaction(async (tx) => {
+    const itemToUpdate = await tx.inventoryItem.findFirst({
+      where: { id: inventoryItemId, restaurantId },
+    });
+
+    if (!itemToUpdate) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Inventory item not found.");
+    }
+
     // 1. Create the stock log entry
     await tx.stockLog.create({
       data: {
@@ -29,6 +39,12 @@ export const createStockLog = async (
       case StockChangeType.USAGE:
       case StockChangeType.REMOVE:
       case StockChangeType.WASTAGE:
+        if (itemToUpdate.currentStock < quantity) {
+          throw new ApiError(
+            httpStatus.BAD_REQUEST,
+            "Adjustment quantity cannot be greater than current stock."
+          );
+        }
         updateOperation = { decrement: quantity };
         break;
       case StockChangeType.ADJUST:

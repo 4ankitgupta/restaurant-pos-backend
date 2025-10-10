@@ -253,7 +253,7 @@ model StockLog {
   id              String          @id @default(uuid())
   restaurant      Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   restaurantId    String
-  inventoryItem   InventoryItem   @relation(fields: [inventoryItemId], references: [id])
+  inventoryItem   InventoryItem   @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
   inventoryItemId String
   changeType      StockChangeType
   quantity        Float
