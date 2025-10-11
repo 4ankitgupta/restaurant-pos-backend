@@ -1,7 +1,13 @@
 import { Router } from "express";
 import { validate } from "../../middlewares/validate.middleware.js";
-import { createPaymentSchema } from "./payment.validation.js";
-import { createPaymentController } from "./payment.controller.js";
+import {
+  createPaymentSchema,
+  refundPaymentSchema,
+} from "./payment.validation.js";
+import {
+  createPaymentController,
+  refundPaymentController,
+} from "./payment.controller.js";
 import {
   authenticateJWT,
   authorizeRoles,
@@ -16,6 +22,14 @@ router.post(
   authorizeRoles(UserRole.CASHIER),
   validate(createPaymentSchema),
   createPaymentController
+);
+
+router.post(
+  "/:orderId/refund",
+  authenticateJWT,
+  authorizeRoles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN),
+  validate(refundPaymentSchema),
+  refundPaymentController
 );
 
 export default router;

@@ -8,3 +8,9 @@ export const createPaymentSchema = z.object({
     paymentMethod: z.nativeEnum(PaymentMethod),
   }),
 });
+
+export const refundPaymentSchema = z.object({
+  params: z.object({
+    orderId: z.string().uuid(),
+  }),
+});

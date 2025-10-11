@@ -1,7 +1,7 @@
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
-import { PaymentStatus } from "@prisma/client";
+import { PaymentStatus, TransactionStatus } from "@prisma/client";
 import { broadcastToRestaurant } from "../../websocketServer.js";
 
 export const createPayment = async (paymentData: any, restaurantId: string) => {
@@ -48,4 +48,39 @@ export const createPayment = async (paymentData: any, restaurantId: string) => {
   });
 
   return payment;
+};
+
+export const refundPayment = async (orderId: string, restaurantId: string) => {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, restaurantId },
+    include: { payments: true },
+  });
+
+  if (!order) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+  }
+
+  if (order.paymentStatus !== PaymentStatus.PAID) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Order is not in a refundable state"
+    );
+  }
+
+  await prisma.payment.updateMany({
+    where: { orderId },
+    data: { status: TransactionStatus.FAILED },
+  });
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: orderId },
+    data: { paymentStatus: PaymentStatus.REFUNDED },
+  });
+
+  broadcastToRestaurant(restaurantId, {
+    type: "PAYMENT_STATUS_UPDATE",
+    payload: updatedOrder,
+  });
+
+  return updatedOrder;
 };

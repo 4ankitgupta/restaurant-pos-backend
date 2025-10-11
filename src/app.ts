@@ -23,6 +23,7 @@ import waiterRoutes from "./modules/waiter/waiter.routes.js";
 import supplierRoutes from "./modules/supplier/supplier.routes.js"; // <-- ADD THIS
 import purchaseOrderRoutes from "./modules/purchaseOrder/purchaseOrder.routes.js"; // <-- ADD THIS
 import stockLogRoutes from "./modules/stockLog/stockLog.routes.js"; // <-- ADD THIS
+import cashierRoutes from "./modules/cashier/cashier.routes.js";
 
 const app: Application = express();
 
@@ -46,6 +47,7 @@ apiRouter.use("/waiter", waiterRoutes);
 apiRouter.use("/suppliers", supplierRoutes); // <-- ADD THIS
 apiRouter.use("/purchase-orders", purchaseOrderRoutes); // <-- ADD THIS
 apiRouter.use("/stock-logs", stockLogRoutes); // <-- ADD THIS
+apiRouter.use("/cashier", cashierRoutes);
 
 app.use("/api/v1", apiRouter);
 

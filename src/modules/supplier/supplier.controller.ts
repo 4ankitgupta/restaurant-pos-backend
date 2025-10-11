@@ -18,6 +18,9 @@ export const getSupplierByIdController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const restaurantId = req.user?.restaurantId;
+    if (!id) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Supplier ID is required");
+    }
     const supplier = await supplierService.getSupplierById(id, restaurantId!);
     res.status(httpStatus.OK).json(new ApiResponse(httpStatus.OK, supplier));
   }
@@ -46,6 +49,11 @@ export const updateSupplierController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const restaurantId = req.user?.restaurantId;
+
+    if (!id) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Supplier ID is required");
+    }
+
     const updatedSupplier = await supplierService.updateSupplier(
       id,
       req.body,
@@ -67,6 +75,9 @@ export const deleteSupplierController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const restaurantId = req.user?.restaurantId;
+    if (!id) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Supplier ID is required");
+    }
     await supplierService.deleteSupplier(id, restaurantId!);
     res
       .status(httpStatus.OK)
