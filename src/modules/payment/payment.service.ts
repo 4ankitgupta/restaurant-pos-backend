@@ -1,7 +1,7 @@
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
-import { PaymentStatus, TransactionStatus } from "@prisma/client";
+import { PaymentStatus, TransactionStatus, OrderStatus } from "@prisma/client";
 import { broadcastToRestaurant } from "../../websocketServer.js";
 
 export const createPayment = async (paymentData: any, restaurantId: string) => {
@@ -33,13 +33,18 @@ export const createPayment = async (paymentData: any, restaurantId: string) => {
     )._sum.amount || 0;
 
   let paymentStatus: PaymentStatus = PaymentStatus.PARTIAL;
+  let orderStatus: OrderStatus | undefined;
+
   if (totalPaid >= order.totalAmount) {
     paymentStatus = PaymentStatus.PAID;
+    if (order.takeAway) {
+      orderStatus = OrderStatus.COMPLETED;
+    }
   }
 
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
-    data: { paymentStatus },
+    data: { paymentStatus, ...(orderStatus && { status: orderStatus }) },
   });
 
   broadcastToRestaurant(restaurantId, {

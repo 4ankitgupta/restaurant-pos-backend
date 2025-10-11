@@ -19,7 +19,7 @@ const router = Router();
 router.post(
   "/",
   authenticateJWT,
-  authorizeRoles(UserRole.CASHIER),
+  authorizeRoles(UserRole.CASHIER, UserRole.MANAGER, UserRole.ADMIN),
   validate(createPaymentSchema),
   createPaymentController
 );

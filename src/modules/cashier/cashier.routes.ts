@@ -21,7 +21,10 @@ import { createPaymentSchema } from "../payment/payment.validation.js";
 
 const router = Router();
 
-router.use(authenticateJWT, authorizeRoles(UserRole.CASHIER));
+router.use(
+  authenticateJWT,
+  authorizeRoles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER)
+);
 
 router.get("/orders", getActiveAndUnpaidOrdersController);
 router.get("/orders/completed", getCompletedOrdersController);
