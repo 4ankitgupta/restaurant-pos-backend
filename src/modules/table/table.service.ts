@@ -3,8 +3,46 @@ import { TableStatus, OrderStatus } from "@prisma/client";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
 
+// export const getAllTables = async (restaurantId: string) => {
+//   return prisma.table.findMany({ where: { restaurantId } });
+// };
+
 export const getAllTables = async (restaurantId: string) => {
-  return prisma.table.findMany({ where: { restaurantId } });
+  // 1. Fetch tables and include their active orders
+  const tablesWithOrders = await prisma.table.findMany({
+    where: { restaurantId },
+    include: {
+      orders: {
+        where: {
+          status: {
+            in: [OrderStatus.PENDING, OrderStatus.IN_PROGRESS],
+          },
+        },
+        // Get the most recent active order if there are multiple
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+      },
+    },
+  });
+
+  // 2. Map the results to the desired format
+  const tables = tablesWithOrders.map((table) => {
+    const { orders, ...tableData } = table;
+    const activeOrder = orders[0]; // Get the first (and only) order from the array
+
+    return {
+      ...tableData,
+      // Add orderStatus if the table is Occupied and has an active order, otherwise null
+      orderStatus:
+        table.status === TableStatus.Occupied && activeOrder
+          ? activeOrder.status
+          : null,
+    };
+  });
+
+  return tables;
 };
 
 // --- NEW: Replaces the old allocateTable ---
