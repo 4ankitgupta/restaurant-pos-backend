@@ -1,0 +1,83 @@
+import { Router } from "express";
+import {
+  authenticateJWT,
+  authorizeRoles,
+} from "../../middlewares/auth.middleware.js";
+import * as reportController from "./reports.controller.js";
+import { validate } from "../../middlewares/validate.middleware.js";
+import * as reportValidation from "./reports.validation.js";
+
+const router = Router();
+
+// --- Reports for Manager & Admin ---
+
+// Sales Reports
+router.get(
+  "/sales-summary",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  validate(reportValidation.salesReportSchema),
+  reportController.getSalesSummaryReport
+);
+
+router.get(
+  "/item-wise-sales",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  validate(reportValidation.salesReportSchema),
+  reportController.getItemWiseSalesReport
+);
+
+router.get(
+  "/category-sales",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getCategorySalesReport
+);
+
+// Inventory Reports
+router.get(
+  "/stock-level",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  reportController.getStockLevelReport
+);
+
+// Financial & Operational Reports
+router.get(
+  "/daily-closing",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  validate(reportValidation.singleDateSchema),
+  reportController.getDailyClosingReport
+);
+
+router.get(
+  "/order-cancellation",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getOrderCancellationReport
+);
+
+router.get(
+  "/payment-summary",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getPaymentSummaryReport
+);
+
+// --- Reports for Admin Only ---
+
+// Inventory Reports
+router.get(
+  "/stock-consumption",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getStockConsumptionReport
+);
+
+export default router;

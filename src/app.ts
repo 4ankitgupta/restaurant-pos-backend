@@ -29,6 +29,7 @@ import purchaseOrderRoutes from "./modules/purchaseOrder/purchaseOrder.routes.js
 import stockLogRoutes from "./modules/stockLog/stockLog.routes.js";
 import cashierRoutes from "./modules/cashier/cashier.routes.js";
 import dashboardRouter from "./modules/dashboard/dashboard.routes.js";
+import reportRoutes from "./modules/reports/reports.routes.js";
 
 const app: Application = express();
 
@@ -53,7 +54,8 @@ apiRouter.use("/suppliers", supplierRoutes);
 apiRouter.use("/purchase-orders", purchaseOrderRoutes);
 apiRouter.use("/stock-logs", stockLogRoutes);
 apiRouter.use("/cashier", cashierRoutes);
-app.use("/api/v1/dashboard", dashboardRouter);
+apiRouter.use("/dashboard", dashboardRouter);
+apiRouter.use("/reports", reportRoutes);
 
 // All API calls will be under /api/v1
 app.use("/api/v1", apiRouter);
