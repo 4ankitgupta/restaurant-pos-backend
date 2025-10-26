@@ -15,7 +15,31 @@ async function main() {
   await prisma.menuCategory.deleteMany();
   await prisma.table.deleteMany();
   await prisma.user.deleteMany();
+
+  await prisma.subscription.deleteMany();
+  await prisma.plan.deleteMany();
+  await prisma.superAdmin.deleteMany();
+
   await prisma.restaurant.deleteMany();
+
+  const superAdminPassword = "superadmin123"; // Change this!
+  const hashedSuperAdminPassword = await bcrypt.hash(superAdminPassword, 10);
+
+  await prisma.superAdmin.upsert({
+    where: { email: "superadmin@rasoitrack.com" }, // Use a unique email
+    update: {
+      name: "Super Admin",
+      passwordHash: hashedSuperAdminPassword,
+    },
+    create: {
+      name: "Super Admin",
+      email: "superadmin@rasoitrack.com",
+      passwordHash: hashedSuperAdminPassword,
+    },
+  });
+  console.log(
+    `✅ Created Super Admin: superadmin@rasoitrack.com (Password: ${superAdminPassword})`
+  );
 
   // 2. Create a Restaurant
   const restaurant = await prisma.restaurant.create({
@@ -27,6 +51,29 @@ async function main() {
     },
   });
   console.log(`✅ Created restaurant: ${restaurant.name}`);
+
+  const trialPlan = await prisma.plan.create({
+    data: {
+      name: "Trial Plan",
+      price: 0,
+      features: {
+        users: 5,
+        tables: 10,
+        orders: "unlimited",
+      },
+    },
+  });
+  console.log("✅ Created Trial Plan");
+
+  await prisma.subscription.create({
+    data: {
+      restaurantId: restaurant.id,
+      planId: trialPlan.id,
+      status: "TRIAL",
+      trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14-day trial
+    },
+  });
+  console.log(`✅ Created Trial Subscription for ${restaurant.name}`);
 
   // 3. Create Users (Admin, Manager, Waiter, etc.)
   const password = "demo123"; // Use a secure password in a real app
