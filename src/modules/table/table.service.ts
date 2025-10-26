@@ -45,6 +45,125 @@ export const getAllTables = async (restaurantId: string) => {
   return tables;
 };
 
+export const createTable = async (
+  restaurantId: string,
+  payload: {
+    tableNumber: string;
+    capacity: number;
+    status?: TableStatus;
+  }
+) => {
+  const existingTable = await prisma.table.findFirst({
+    where: {
+      restaurantId,
+      tableNumber: payload.tableNumber,
+    },
+  });
+
+  if (existingTable) {
+    throw new ApiError(
+      httpStatus.CONFLICT,
+      "A table with this number already exists"
+    );
+  }
+
+  return prisma.table.create({
+    data: {
+      restaurantId,
+      tableNumber: payload.tableNumber,
+      capacity: payload.capacity,
+      status: payload.status ?? TableStatus.Available,
+    },
+  });
+};
+
+export const updateTable = async (
+  tableId: string,
+  restaurantId: string,
+  updates: {
+    tableNumber?: string;
+    capacity?: number;
+    status?: TableStatus;
+  }
+) => {
+  const existingTable = await prisma.table.findFirst({
+    where: { id: tableId, restaurantId },
+  });
+
+  if (!existingTable) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Table not found");
+  }
+
+  if (
+    updates.tableNumber &&
+    updates.tableNumber !== existingTable.tableNumber
+  ) {
+    const conflict = await prisma.table.findFirst({
+      where: {
+        restaurantId,
+        tableNumber: updates.tableNumber,
+        NOT: { id: tableId },
+      },
+    });
+
+    if (conflict) {
+      throw new ApiError(
+        httpStatus.CONFLICT,
+        "Another table with this number already exists"
+      );
+    }
+  }
+
+  return prisma.table.update({
+    where: { id: tableId },
+    data: {
+      tableNumber: updates.tableNumber ?? existingTable.tableNumber,
+      capacity: updates.capacity ?? existingTable.capacity,
+      status: updates.status ?? existingTable.status,
+    },
+  });
+};
+
+export const deleteTable = async (tableId: string, restaurantId: string) => {
+  const table = await prisma.table.findFirst({
+    where: { id: tableId, restaurantId },
+    include: {
+      orders: {
+        where: {
+          status: {
+            in: [OrderStatus.PENDING, OrderStatus.IN_PROGRESS],
+          },
+        },
+      },
+    },
+  });
+
+  if (!table) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Table not found");
+  }
+
+  if (
+    table.status === TableStatus.Occupied ||
+    table.status === TableStatus.NeedCleaning
+  ) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Cannot delete a table that is currently in use"
+    );
+  }
+
+  if (table.orders.length > 0) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Cannot delete a table with active orders"
+    );
+  }
+
+  return prisma.table.delete({
+    where: { id: tableId },
+  });
+};
+
 // --- NEW: Replaces the old allocateTable ---
 export const seatTable = async (
   tableId: string,

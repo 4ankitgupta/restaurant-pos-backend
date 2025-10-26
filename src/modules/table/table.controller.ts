@@ -14,6 +14,73 @@ export const getAllTablesController = asyncHandler(
   }
 );
 
+export const createTableController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+    const { tableNumber, capacity, status } = req.body;
+
+    const table = await tableService.createTable(restaurantId!, {
+      tableNumber,
+      capacity,
+      status,
+    });
+
+    res
+      .status(httpStatus.CREATED)
+      .json(
+        new ApiResponse(httpStatus.CREATED, table, "Table created successfully")
+      );
+  }
+);
+
+export const updateTableController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+    const { tableId } = req.params;
+
+    if (!tableId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Table ID is required");
+    }
+
+    const { tableNumber, capacity, status } = req.body;
+
+    const table = await tableService.updateTable(tableId, restaurantId!, {
+      tableNumber,
+      capacity,
+      status,
+    });
+
+    res
+      .status(httpStatus.OK)
+      .json(
+        new ApiResponse(httpStatus.OK, table, "Table updated successfully")
+      );
+  }
+);
+
+export const deleteTableController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+    const { tableId } = req.params;
+
+    if (!tableId) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Table ID is required");
+    }
+
+    const deletedTable = await tableService.deleteTable(tableId, restaurantId!);
+
+    res
+      .status(httpStatus.OK)
+      .json(
+        new ApiResponse(
+          httpStatus.OK,
+          deletedTable,
+          "Table deleted successfully"
+        )
+      );
+  }
+);
+
 export const seatTableController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const restaurantId = req.user?.restaurantId;
