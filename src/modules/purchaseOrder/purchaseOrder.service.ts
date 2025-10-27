@@ -12,22 +12,28 @@ export const createPurchaseOrder = async (
   // Use a transaction to ensure all operations succeed or none do
   return prisma.$transaction(async (tx) => {
     // 1. Create the PurchaseOrder
-    const purchaseOrder = await tx.purchaseOrder.create({
-      data: {
-        ...orderData,
-        restaurantId,
-        supplierId,
-        // Create PurchaseItem records nested within the PurchaseOrder
-        purchaseItems: {
-          create: items.map((item) => ({
-            inventoryItemId: item.inventoryItemId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.quantity * item.unitPrice,
-            restaurantId, // Add restaurantId to each purchase item
-          })),
-        },
+    const purchaseData: any = {
+      restaurantId,
+      supplierId,
+      totalAmount: orderData.totalAmount,
+      invoiceNumber: (orderData as any).invoiceNumber ?? null,
+      purchaseItems: {
+        create: items.map((item) => ({
+          inventoryItemId: item.inventoryItemId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.quantity * item.unitPrice,
+          restaurantId, // Add restaurantId to each purchase item
+        })),
       },
+    };
+
+    if ((orderData as any).purchaseDate) {
+      purchaseData.purchaseDate = new Date((orderData as any).purchaseDate);
+    }
+
+    const purchaseOrder = await tx.purchaseOrder.create({
+      data: purchaseData,
     });
 
     // 2. Update the stock for each inventory item (verify tenancy)

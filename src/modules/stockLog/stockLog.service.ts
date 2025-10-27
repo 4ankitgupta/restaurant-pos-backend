@@ -25,7 +25,7 @@ export const createStockLog = async (
         inventoryItemId,
         changeType,
         quantity,
-        remarks,
+        remarks: remarks ?? null,
         restaurantId,
       },
     });

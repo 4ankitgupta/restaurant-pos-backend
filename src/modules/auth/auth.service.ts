@@ -12,13 +12,14 @@ const generateTokens = (user: {
   role: UserRole;
   restaurantId: string;
 }) => {
-  const accessToken = jwt.sign(
+  // Use `any` to satisfy typings of jsonwebtoken in this project setup
+  const accessToken = (jwt as any).sign(
     { id: user.id, role: user.role, restaurantId: user.restaurantId },
     config.jwt.accessTokenSecret,
     { expiresIn: config.jwt.accessTokenExpire }
   );
 
-  const refreshToken = jwt.sign(
+  const refreshToken = (jwt as any).sign(
     { id: user.id },
     config.jwt.refreshTokenSecret,
     { expiresIn: config.jwt.refreshTokenExpire }
