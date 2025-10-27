@@ -77,7 +77,7 @@ export const addItemsToOrder = async (
   restaurantId: string
 ) => {
   return prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUnique({
+    const order = await tx.order.findFirst({
       where: { id: orderId, restaurantId },
     });
 

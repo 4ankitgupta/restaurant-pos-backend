@@ -71,6 +71,13 @@ export const updateOrderItemStatus = async (
       item.status === OrderItemStatus.CANCELLED
   );
   if (allItemsServed) {
+    // Ensure the order belongs to the same restaurant before updating it.
+    const order = updatedOrderItem.order;
+    if (!order || (order as any).restaurantId !== restaurantId) {
+      // If there is a mismatch, act like the resource doesn't exist to avoid info leak
+      throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+    }
+
     await prisma.order.update({
       where: { id: updatedOrderItem.orderId },
       data: { status: "COMPLETED" },

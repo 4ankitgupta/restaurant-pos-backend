@@ -1,5 +1,7 @@
 import prisma from "../../db/index.js";
 import { type CreatePurchaseOrderDto } from "./purchaseOrder.validation.js";
+import { ApiError } from "../../utils/ApiError.js";
+import httpStatus from "http-status";
 
 export const createPurchaseOrder = async (
   data: CreatePurchaseOrderDto,
@@ -28,8 +30,16 @@ export const createPurchaseOrder = async (
       },
     });
 
-    // 2. Update the stock for each inventory item
+    // 2. Update the stock for each inventory item (verify tenancy)
     for (const item of items) {
+      const inventory = await tx.inventoryItem.findFirst({
+        where: { id: item.inventoryItemId, restaurantId },
+      });
+
+      if (!inventory) {
+        throw new ApiError(httpStatus.NOT_FOUND, "Inventory item not found");
+      }
+
       await tx.inventoryItem.update({
         where: { id: item.inventoryItemId },
         data: {
@@ -40,9 +50,9 @@ export const createPurchaseOrder = async (
       });
     }
 
-    // 3. Return the newly created purchase order with its items
-    return tx.purchaseOrder.findUnique({
-      where: { id: purchaseOrder.id },
+    // 3. Return the newly created purchase order with its items (scoped to restaurant)
+    return tx.purchaseOrder.findFirst({
+      where: { id: purchaseOrder.id, restaurantId },
       include: {
         purchaseItems: {
           include: {

@@ -1,5 +1,7 @@
 import { type Request, type Response } from "express";
 import { UserService } from "./users.service.js";
+import type { AuthRequest } from "../../middlewares/auth.middleware.js";
+import { type UserRole } from "@prisma/client";
 
 export class UserController {
   private userService: UserService;
@@ -8,23 +10,30 @@ export class UserController {
     this.userService = new UserService();
   }
 
-  public async getAllUsers(req: Request, res: Response): Promise<void> {
+  public async getAllUsers(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const users = await this.userService.getAllUsers();
+      const users = await this.userService.getAllUsers(
+        req.user?.restaurantId,
+        req.user?.role as UserRole
+      );
       res.status(200).json(users);
     } catch (error) {
       res.status(500).json({ message: "Error retrieving users" });
     }
   }
 
-  public async getUserById(req: Request, res: Response): Promise<void> {
+  public async getUserById(req: AuthRequest, res: Response): Promise<void> {
     const { id } = req.params;
     if (!id) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
     try {
-      const user = await this.userService.getUserById(id);
+      const user = await this.userService.getUserById(
+        id,
+        req.user?.restaurantId,
+        req.user?.role as UserRole
+      );
       if (user) {
         res.status(200).json(user);
       } else {
@@ -35,23 +44,32 @@ export class UserController {
     }
   }
 
-  public async createUser(req: Request, res: Response): Promise<void> {
+  public async createUser(req: AuthRequest, res: Response): Promise<void> {
     try {
-      const newUser = await this.userService.createUser(req.body);
+      const newUser = await this.userService.createUser(
+        req.body,
+        req.user?.restaurantId,
+        req.user?.role as UserRole
+      );
       res.status(201).json(newUser);
     } catch (error) {
       res.status(500).json({ message: "Error creating user" });
     }
   }
 
-  public async updateUser(req: Request, res: Response): Promise<void> {
+  public async updateUser(req: AuthRequest, res: Response): Promise<void> {
     const { id } = req.params;
     if (!id) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
     try {
-      const updatedUser = await this.userService.updateUser(id, req.body);
+      const updatedUser = await this.userService.updateUser(
+        id,
+        req.body,
+        req.user?.restaurantId,
+        req.user?.role as UserRole
+      );
       if (updatedUser) {
         res.status(200).json(updatedUser);
       } else {
@@ -62,14 +80,18 @@ export class UserController {
     }
   }
 
-  public async deleteUser(req: Request, res: Response): Promise<void> {
+  public async deleteUser(req: AuthRequest, res: Response): Promise<void> {
     const { id } = req.params;
     if (!id) {
       res.status(400).json({ message: "User ID is required" });
       return;
     }
     try {
-      const deleted = await this.userService.deleteUser(id);
+      const deleted = await this.userService.deleteUser(
+        id,
+        req.user?.restaurantId,
+        req.user?.role as UserRole
+      );
       if (deleted) {
         res.status(204).send();
       } else {

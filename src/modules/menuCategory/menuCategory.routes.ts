@@ -9,6 +9,7 @@ import {
   authenticateJWT,
   authorizeRoles,
 } from "../../middlewares/auth.middleware.js";
+import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 import { UserRole } from "@prisma/client";
 
 const router = Router();
@@ -17,6 +18,7 @@ router.get("/", authenticateJWT, getAllMenuCategoriesController);
 router.post(
   "/",
   authenticateJWT,
+  enforceTenancy,
   authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
   createMenuCategoryController
 );

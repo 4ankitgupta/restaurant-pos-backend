@@ -17,12 +17,14 @@ import {
   authorizeRoles,
 } from "../../middlewares/auth.middleware.js";
 import { UserRole } from "@prisma/client";
+import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 
 const router = Router();
 
 router.post(
   "/orders",
   authenticateJWT,
+  enforceTenancy,
   authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
   validate(createOrderSchema),
   createOrderController
@@ -31,6 +33,7 @@ router.post(
 router.post(
   "/orders/:orderId/items",
   authenticateJWT,
+  enforceTenancy,
   authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
   validate(addItemsToOrderSchema),
   addItemsToOrderController

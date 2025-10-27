@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { MenuItemController } from "./menuItem.controller.js";
 import { authenticateJWT } from "../../middlewares/auth.middleware.js";
+import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 
 const router = Router();
 const menuItemController = new MenuItemController();
@@ -13,6 +14,7 @@ router.get(
 router.post(
   "/",
   authenticateJWT,
+  enforceTenancy,
   menuItemController.createMenuItem.bind(menuItemController)
 );
 router.get(

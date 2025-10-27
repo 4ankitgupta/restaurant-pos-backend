@@ -7,7 +7,7 @@ import { broadcastToRestaurant } from "../../websocketServer.js";
 export const createPayment = async (paymentData: any, restaurantId: string) => {
   const { orderId, amount, paymentMethod } = paymentData;
 
-  const order = await prisma.order.findUnique({
+  const order = await prisma.order.findFirst({
     where: { id: orderId, restaurantId },
   });
 
@@ -73,7 +73,7 @@ export const refundPayment = async (orderId: string, restaurantId: string) => {
   }
 
   await prisma.payment.updateMany({
-    where: { orderId },
+    where: { orderId, restaurantId },
     data: { status: TransactionStatus.FAILED },
   });
 

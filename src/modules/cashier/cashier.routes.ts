@@ -18,6 +18,7 @@ import {
 } from "./cashier.controller.js";
 import { createPaymentController } from "../payment/payment.controller.js";
 import { createPaymentSchema } from "../payment/payment.validation.js";
+import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 
 const router = Router();
 
@@ -31,15 +32,22 @@ router.get("/orders/completed", getCompletedOrdersController);
 router.get("/orders/:orderId", getOrderDetailsController);
 router.post(
   "/orders/:orderId/items",
+  enforceTenancy,
   validate(addItemsToOrderSchema),
   addItemsToOrderController
 );
 router.post(
   "/orders/takeaway",
+  enforceTenancy,
   validate(createTakeawayOrderSchema),
   createTakeawayOrderController
 );
-router.post("/payment", validate(createPaymentSchema), createPaymentController);
-router.post("/orders/:orderId/refund", createPaymentController);
+router.post(
+  "/payment",
+  enforceTenancy,
+  validate(createPaymentSchema),
+  createPaymentController
+);
+router.post("/orders/:orderId/refund", enforceTenancy, createPaymentController);
 
 export default router;

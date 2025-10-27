@@ -14,6 +14,7 @@ import {
 import { UserRole } from "@prisma/client";
 import { getActiveOrderByTableController } from "../order/order.controller.js"; // Import from order controller
 import { validate } from "../../middlewares/validate.middleware.js";
+import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 import {
   createTableSchema,
   updateTableSchema,
@@ -29,6 +30,7 @@ router
   .get(getAllTablesController)
   .post(
     authorizeRoles(UserRole.MANAGER, UserRole.ADMIN),
+    enforceTenancy,
     validate(createTableSchema),
     createTableController
   );
@@ -49,6 +51,7 @@ router
 router.post(
   "/:tableId/seat", // Changed from /allocate
   authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
+  enforceTenancy,
   seatTableController
 );
 

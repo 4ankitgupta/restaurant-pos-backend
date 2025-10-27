@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { UserController } from "./users.controller.js";
 import { authenticateJWT } from "../../middlewares/auth.middleware.js";
+import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 
 const router = Router();
 const userController = new UserController();
@@ -13,6 +14,7 @@ router.get(
 router.post(
   "/",
   authenticateJWT,
+  enforceTenancy,
   userController.createUser.bind(userController)
 );
 router.get(

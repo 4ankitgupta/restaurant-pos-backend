@@ -16,6 +16,7 @@ import {
   authorizeRoles,
 } from "../../middlewares/auth.middleware.js";
 import { UserRole } from "@prisma/client";
+import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.post(
   "/register",
   authenticateJWT,
   authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
+  enforceTenancy,
   validate(registerSchema),
   registerUserController
 );
