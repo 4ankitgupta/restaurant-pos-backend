@@ -4,6 +4,7 @@ import { Server } from "http";
 import jwt from "jsonwebtoken";
 import config from "./config/index.js";
 import { UserRole } from "@prisma/client";
+import logger from "./config/logger.js";
 
 interface AuthenticatedWebSocket extends WebSocket {
   userId: string;
@@ -45,7 +46,7 @@ export const setupWebSocket = (server: Server) => {
     }
   });
 
-  console.log("🚀 WebSocket server is running");
+  logger.info("🚀 WebSocket server is running");
 };
 
 export const broadcastToRestaurant = (

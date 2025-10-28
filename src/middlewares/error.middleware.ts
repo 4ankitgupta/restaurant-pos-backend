@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import httpStatus from "http-status";
 import { ApiError } from "../utils/ApiError.js";
+import logger from "../config/logger.js";
 
 export const errorHandler = (
   err: any,
@@ -20,7 +21,7 @@ export const errorHandler = (
     ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   };
 
-  console.error(err);
+  logger.error(err);
 
   res.status(statusCode).json(response);
 };

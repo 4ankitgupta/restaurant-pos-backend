@@ -8,6 +8,7 @@ const config = {
     accessTokenExpire: process.env.ACCESS_TOKEN_EXPIRY!,
     refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET!,
     refreshTokenExpire: process.env.REFRESH_TOKEN_EXPIRY!,
+    nodeEnv: process.env.NODE_ENV || "development",
   },
 };
 

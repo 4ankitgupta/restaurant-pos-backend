@@ -6,6 +6,8 @@ import express, {
   type NextFunction,
 } from "express";
 import cors from "cors";
+import morgan from "morgan"; // Import morgan
+import logger, { morganStream } from "./config/logger.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { ApiError } from "./utils/ApiError.js";
 import httpStatus from "http-status";
@@ -38,6 +40,12 @@ app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
 app.use(cors({ origin: "*", credentials: true }));
 
+// --- HTTP Request Logging ---
+// Use 'combined' format for production and 'dev' for development
+const morganFormat = process.env.NODE_ENV === "production" ? "combined" : "dev";
+// Pipe morgan output to our winston logger
+app.use(morgan(morganFormat, { stream: morganStream }));
+
 // --- API Routes ---
 const apiRouter = express.Router();
 apiRouter.use("/auth", authRoutes);
@@ -65,10 +73,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // --- Serve Frontend ---
-const reactBuildPath = path.resolve(__dirname, "../dist");
+const reactBuildPath = path.resolve(__dirname, "../distfrontend");
 
 if (fs.existsSync(reactBuildPath)) {
-  console.log("🚀 Serving React build from:", reactBuildPath);
+  logger.info(`🚀 Serving React build from: ${reactBuildPath}`);
 
   // Serve static assets from the 'dist' folder
   app.use(express.static(reactBuildPath));
@@ -79,8 +87,8 @@ if (fs.existsSync(reactBuildPath)) {
     res.sendFile(path.join(reactBuildPath, "index.html"));
   });
 } else {
-  console.warn("⚠️ React build folder not found at:", reactBuildPath);
-  console.warn("Please run 'npm run build' in your frontend project first.");
+  logger.warn(`⚠️ React build folder not found at: ${reactBuildPath}`);
+  logger.warn("Please run 'npm run build' in your frontend project first.");
 
   // Health Check if frontend not found
   app.get("/", (req: Request, res: Response) => {
