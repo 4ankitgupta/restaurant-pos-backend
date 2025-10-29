@@ -6,6 +6,13 @@ import httpStatus from "http-status";
 import { OrderStatus, OrderItemStatus } from "@prisma/client";
 import { broadcastToRoom } from "../../websocket/websocket.js";
 
+// Define the item type for validation, as this file also has addItemsToOrder
+type OrderItemInput = {
+  menuItemVariantId: string;
+  quantity: number;
+  note?: string;
+};
+
 export const getActiveOrders = async (restaurantId: string) => {
   return prisma.order.findMany({
     where: {
@@ -25,7 +32,13 @@ export const getActiveOrders = async (restaurantId: string) => {
           },
         },
         include: {
-          menuItem: true,
+          // menuItem: true, // <-- REMOVED
+          menuItemVariant: {
+            // <-- ADDED
+            include: {
+              menuItem: true,
+            },
+          },
         },
       },
     },
@@ -44,9 +57,16 @@ export const getOrderDetails = async (
     include: {
       orderItems: {
         include: {
-          menuItem: true,
+          // menuItem: true, // <-- REMOVED
+          menuItemVariant: {
+            // <-- ADDED
+            include: {
+              menuItem: true,
+            },
+          },
         },
       },
+      table: true, // Also include table details
     },
   });
   if (!order) {
@@ -70,9 +90,16 @@ export const getActiveOrderByTable = async (
     include: {
       orderItems: {
         include: {
-          menuItem: true,
+          // menuItem: true, // <-- REMOVED
+          menuItemVariant: {
+            // <-- ADDED
+            include: {
+              menuItem: true,
+            },
+          },
         },
       },
+      table: true,
     },
   });
 
@@ -87,53 +114,64 @@ export const getActiveOrderByTable = async (
 
 export const addItemsToOrder = async (
   orderId: string,
-  items: Array<{ menuItemId: string; quantity: number }>,
+  items: Array<OrderItemInput>, // <-- Updated type
   restaurantId: string
 ) => {
+  // getOrderDetails is now updated, so it will return the correct structure
   const order = await getOrderDetails(orderId, restaurantId);
 
-  const menuItems = await prisma.menuItem.findMany({
+  // 1. Fetch variants, not menu items
+  const menuVariants = await prisma.menuItemVariant.findMany({
     where: {
-      id: { in: items.map((item) => item.menuItemId) },
+      id: { in: items.map((item) => item.menuItemVariantId) },
       restaurantId,
     },
   });
 
-  if (menuItems.length !== items.length) {
+  // 2. Validate variants
+  if (menuVariants.length !== items.length) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "One or more menu items are invalid."
+      "One or more menu item variants are invalid."
     );
   }
+
+  // 3. Map variants for easy lookup
+  const variantsById = new Map(menuVariants.map((v) => [v.id, v]));
 
   const updatedOrderWithItems = await prisma.$transaction(async (tx) => {
     let totalAmount = order.totalAmount;
 
     for (const item of items) {
-      const menuItem = menuItems.find((mi) => mi.id === item.menuItemId);
-      if (!menuItem) continue;
+      const variant = variantsById.get(item.menuItemVariantId);
+      if (!variant) continue;
 
-      const itemTotal = menuItem.price.mul(item.quantity);
+      const itemTotal = variant.price.mul(item.quantity);
       totalAmount = totalAmount.add(itemTotal);
 
+      // Check for existing item using the variantId
       const existingOrderItem = await tx.orderItem.findFirst({
-        where: { orderId, menuItemId: item.menuItemId },
+        where: { orderId, menuItemVariantId: item.menuItemVariantId },
       });
 
       if (existingOrderItem) {
         await tx.orderItem.update({
           where: { id: existingOrderItem.id },
-          data: { quantity: { increment: item.quantity } },
+          data: {
+            quantity: { increment: item.quantity },
+            note: item.note ?? null, // Update note if provided
+          },
         });
       } else {
         await tx.orderItem.create({
           data: {
             orderId,
             restaurantId,
-            menuItemId: item.menuItemId,
+            menuItemVariantId: item.menuItemVariantId, // <-- Use variant ID
             quantity: item.quantity,
-            price: menuItem.price,
+            price: variant.price, // <-- Use variant price
             status: OrderItemStatus.ORDERED,
+            note: item.note ?? null, // <-- Add note
           },
         });
       }
@@ -141,14 +179,19 @@ export const addItemsToOrder = async (
 
     const updatedOrder = await tx.order.update({
       where: { id: orderId },
-      // FIX: Changed status to IN_PROGRESS to match your schema and logic
       data: { totalAmount, status: OrderStatus.IN_PROGRESS },
       include: {
         orderItems: {
           include: {
-            menuItem: true,
+            menuItemVariant: {
+              // <-- Updated include
+              include: {
+                menuItem: true,
+              },
+            },
           },
         },
+        table: true,
       },
     });
 
@@ -173,7 +216,13 @@ export const getAllOrders = async (restaurantId: string) => {
     include: {
       orderItems: {
         include: {
-          menuItem: true,
+          // menuItem: true, // <-- REMOVED
+          menuItemVariant: {
+            // <-- ADDED
+            include: {
+              menuItem: true,
+            },
+          },
         },
       },
       table: true,

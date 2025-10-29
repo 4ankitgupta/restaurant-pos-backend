@@ -11,6 +11,8 @@ async function main() {
   // The order is important to avoid foreign key constraint errors
   await prisma.orderItem.deleteMany();
   await prisma.order.deleteMany();
+  // NEW: Delete variants before menu items
+  await prisma.menuItemVariant.deleteMany();
   await prisma.menuItem.deleteMany();
   await prisma.menuCategory.deleteMany();
   await prisma.table.deleteMany();
@@ -121,7 +123,7 @@ async function main() {
       restaurantId: restaurant.id,
     },
   });
-  console.log(`✅ Created waiter user: ${cashier.email}`);
+  console.log(`✅ Created cashier user: ${cashier.email}`);
 
   const chef = await prisma.user.create({
     data: {
@@ -132,24 +134,24 @@ async function main() {
       restaurantId: restaurant.id,
     },
   });
-  console.log(`✅ Created waiter user: ${chef.email}`);
+  console.log(`✅ Created chef user: ${chef.email}`);
 
   // 4. Create Menu Categories
-  const Starters = await prisma.menuCategory.create({
+  const starters = await prisma.menuCategory.create({
     data: {
       name: "Starters",
       restaurantId: restaurant.id,
     },
   });
 
-  const rice_biryani = await prisma.menuCategory.create({
+  const riceBiryani = await prisma.menuCategory.create({
     data: {
       name: "Rice & Biryani",
       restaurantId: restaurant.id,
     },
   });
 
-  const Bread = await prisma.menuCategory.create({
+  const bread = await prisma.menuCategory.create({
     data: {
       name: "Bread",
       restaurantId: restaurant.id,
@@ -165,129 +167,273 @@ async function main() {
 
   const deserts = await prisma.menuCategory.create({
     data: {
-      name: "deserts",
+      name: "Deserts",
       restaurantId: restaurant.id,
     },
   });
   console.log("✅ Created menu categories");
 
-  // 5. Create Menu Items
-  await prisma.menuItem.createMany({
-    data: [
-      // --- Starters ---
-      {
-        name: "Paneer Tikka",
-        price: 180,
-        categoryId: Starters.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Veg Samosa (2 pcs)",
-        price: 60,
-        categoryId: Starters.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Chicken Pakora",
-        price: 200,
-        categoryId: Starters.id,
-        restaurantId: restaurant.id,
-      },
+  // 5. Create Menu Items (Changed from createMany to individual create)
 
-      // --- Rice & Biryani ---
-      {
-        name: "Veg Pulao",
-        price: 150,
-        categoryId: rice_biryani.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Hyderabadi Chicken Biryani",
-        price: 280,
-        categoryId: rice_biryani.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Mutton Dum Biryani",
-        price: 350,
-        categoryId: rice_biryani.id,
-        restaurantId: restaurant.id,
-      },
+  console.log("Creating menu items with variants...");
 
-      // --- Bread ---
-      {
-        name: "Butter Naan",
-        price: 40,
-        categoryId: Bread.id,
-        restaurantId: restaurant.id,
+  // --- Starters ---
+  await prisma.menuItem.create({
+    data: {
+      name: "Paneer Tikka",
+      categoryId: starters.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Regular",
+          price: 180,
+          restaurantId: restaurant.id,
+        },
       },
-      {
-        name: "Garlic Naan",
-        price: 60,
-        categoryId: Bread.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Tandoori Roti",
-        price: 25,
-        categoryId: Bread.id,
-        restaurantId: restaurant.id,
-      },
-
-      // --- Main Courses ---
-      {
-        name: "Paneer Butter Masala",
-        price: 220,
-        categoryId: mainCourses.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Dal Tadka",
-        price: 160,
-        categoryId: mainCourses.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Butter Chicken",
-        price: 280,
-        categoryId: mainCourses.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Rogan Josh (Mutton Curry)",
-        price: 340,
-        categoryId: mainCourses.id,
-        restaurantId: restaurant.id,
-      },
-
-      // --- Deserts ---
-      {
-        name: "Gulab Jamun (2 pcs)",
-        price: 80,
-        categoryId: deserts.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Rasgulla (2 pcs)",
-        price: 80,
-        categoryId: deserts.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Kulfi Falooda",
-        price: 120,
-        categoryId: deserts.id,
-        restaurantId: restaurant.id,
-      },
-      {
-        name: "Kesar Pista Ice Cream",
-        price: 100,
-        categoryId: deserts.id,
-        restaurantId: restaurant.id,
-      },
-    ],
+    },
   });
-  console.log("✅ Created menu items");
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Veg Samosa (2 pcs)",
+      categoryId: starters.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Plate",
+          price: 60,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Chicken Pakora",
+      categoryId: starters.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: [
+          { name: "Half", price: 120, restaurantId: restaurant.id },
+          { name: "Full", price: 200, restaurantId: restaurant.id },
+        ],
+      },
+    },
+  });
+
+  // --- Rice & Biryani ---
+  await prisma.menuItem.create({
+    data: {
+      name: "Veg Pulao",
+      categoryId: riceBiryani.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Plate",
+          price: 150,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Hyderabadi Chicken Biryani",
+      categoryId: riceBiryani.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: [
+          { name: "Half", price: 180, restaurantId: restaurant.id },
+          { name: "Full", price: 280, restaurantId: restaurant.id },
+        ],
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Mutton Dum Biryani",
+      categoryId: riceBiryani.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: [
+          { name: "Half", price: 220, restaurantId: restaurant.id },
+          { name: "Full", price: 350, restaurantId: restaurant.id },
+        ],
+      },
+    },
+  });
+
+  // --- Bread ---
+  await prisma.menuItem.create({
+    data: {
+      name: "Butter Naan",
+      categoryId: bread.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Piece",
+          price: 40,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Garlic Naan",
+      categoryId: bread.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Piece",
+          price: 60,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Tandoori Roti",
+      categoryId: bread.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Piece",
+          price: 25,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  // --- Main Courses ---
+  await prisma.menuItem.create({
+    data: {
+      name: "Paneer Butter Masala",
+      categoryId: mainCourses.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Regular",
+          price: 220,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Dal Tadka",
+      categoryId: mainCourses.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Regular",
+          price: 160,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Butter Chicken",
+      categoryId: mainCourses.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: [
+          { name: "Half", price: 180, restaurantId: restaurant.id },
+          { name: "Full", price: 280, restaurantId: restaurant.id },
+        ],
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Rogan Josh (Mutton Curry)",
+      categoryId: mainCourses.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Regular",
+          price: 340,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  // --- Deserts ---
+  await prisma.menuItem.create({
+    data: {
+      name: "Gulab Jamun (2 pcs)",
+      categoryId: deserts.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Plate",
+          price: 80,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Rasgulla (2 pcs)",
+      categoryId: deserts.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Plate",
+          price: 80,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Kulfi Falooda",
+      categoryId: deserts.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Glass",
+          price: 120,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  await prisma.menuItem.create({
+    data: {
+      name: "Kesar Pista Ice Cream",
+      categoryId: deserts.id,
+      restaurantId: restaurant.id,
+      variants: {
+        create: {
+          name: "Scoop",
+          price: 100,
+          restaurantId: restaurant.id,
+        },
+      },
+    },
+  });
+
+  console.log("✅ Created menu items with variants");
 
   // 6. Create Tables
   await prisma.table.createMany({

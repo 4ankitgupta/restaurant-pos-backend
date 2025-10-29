@@ -1,6 +1,7 @@
 import { type Request, type Response } from "express";
 import { MenuItemService } from "./menuItem.service.js";
 import { type AuthRequest } from "../../middlewares/auth.middleware.js";
+import { validationResult } from "express-validator"; // Import validationResult
 
 export class MenuItemController {
   private menuItemService: MenuItemService;
@@ -56,6 +57,12 @@ export class MenuItemController {
     req: AuthRequest,
     res: Response
   ): Promise<Response> {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const menuData = req.body;
     const restaurantId = req.user?.restaurantId;
     if (!restaurantId) {
@@ -67,8 +74,11 @@ export class MenuItemController {
         restaurantId
       );
       return res.status(201).json(newMenuItem);
-    } catch (error) {
-      return res.status(500).json({ message: "Error creating menu item" });
+    } catch (error: any) {
+      console.error("Error creating menu item:", error);
+      return res
+        .status(500)
+        .json({ message: "Error creating menu item", error: error.message });
     }
   }
 
@@ -76,6 +86,12 @@ export class MenuItemController {
     req: AuthRequest,
     res: Response
   ): Promise<Response> {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
     const { id } = req.params;
     const menuData = req.body;
     const restaurantId = req.user?.restaurantId;
@@ -94,8 +110,11 @@ export class MenuItemController {
         return res.status(404).json({ message: "Menu item not found" });
       }
       return res.status(200).json(updatedMenuItem);
-    } catch (error) {
-      return res.status(500).json({ message: "Error updating menu item" });
+    } catch (error: any) {
+      console.error("Error updating menu item:", error);
+      return res
+        .status(500)
+        .json({ message: "Error updating menu item", error: error.message });
     }
   }
 

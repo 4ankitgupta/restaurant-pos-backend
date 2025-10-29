@@ -10,14 +10,24 @@ export const menuItemValidation = [
     .optional()
     .isString()
     .withMessage("Description must be a string"),
-  body("price")
-    .isNumeric()
-    .withMessage("Price must be a number")
-    .notEmpty()
-    .withMessage("Price is required"),
   body("categoryId")
     .isString()
     .withMessage("Category ID must be a string")
     .notEmpty()
     .withMessage("Category ID is required"),
+
+  // Remove price validation from the main item
+  // body("price")...
+
+  // Add validation for the variants array
+  body("variants")
+    .isArray({ min: 1 })
+    .withMessage("At least one menu item variant is required"),
+  body("variants.*.name")
+    .isString()
+    .notEmpty()
+    .withMessage("Variant name is required and must be a string"),
+  body("variants.*.price")
+    .isNumeric()
+    .withMessage("Variant price is required and must be a number"),
 ];

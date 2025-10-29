@@ -5,9 +5,16 @@ import {
   OrderStatus,
   OrderItemStatus,
   PaymentStatus,
-  type MenuItem,
+  type MenuItemVariant,
 } from "@prisma/client";
 import { broadcastToRestaurant } from "../../websocketServer.js";
+
+// Define the item type for validation
+type OrderItemInput = {
+  menuItemVariantId: string;
+  quantity: number;
+  note?: string;
+};
 
 export const getActiveAndUnpaidOrders = async (restaurantId: string) => {
   return prisma.order.findMany({
@@ -21,7 +28,13 @@ export const getActiveAndUnpaidOrders = async (restaurantId: string) => {
     include: {
       orderItems: {
         include: {
-          menuItem: true,
+          // menuItem: true, // <-- REMOVED
+          menuItemVariant: {
+            // <-- ADDED
+            include: {
+              menuItem: true,
+            },
+          },
         },
       },
       table: true,
@@ -48,7 +61,13 @@ export const getCompletedOrders = async (restaurantId: string) => {
     include: {
       orderItems: {
         include: {
-          menuItem: true,
+          // menuItem: true, // <-- REMOVED
+          menuItemVariant: {
+            // <-- ADDED
+            include: {
+              menuItem: true,
+            },
+          },
         },
       },
       table: true,
@@ -61,7 +80,7 @@ export const getCompletedOrders = async (restaurantId: string) => {
 
 export const addItemsToOrder = async (
   orderId: string,
-  items: Array<{ menuItemId: string; quantity: number }>,
+  items: Array<OrderItemInput>, // <-- Updated type
   restaurantId: string
 ) => {
   return prisma.$transaction(async (tx) => {
@@ -73,49 +92,75 @@ export const addItemsToOrder = async (
       throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
     }
 
-    const menuItems = await tx.menuItem.findMany({
+    // 1. Fetch the menuItemVariants
+    const variantIds = items.map((item) => item.menuItemVariantId);
+    const menuVariants = await tx.menuItemVariant.findMany({
       where: {
-        id: { in: items.map((item) => item.menuItemId) },
+        id: { in: variantIds },
         restaurantId,
       },
     });
 
-    if (menuItems.length !== items.length) {
+    // 2. Validate all variants were found
+    if (menuVariants.length !== variantIds.length) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        "One or more menu items are invalid."
+        "One or more menu item variants are invalid."
       );
     }
 
-    let totalAmount = order.totalAmount;
+    // 3. Map variants for easy lookup and prepare for creation
+    const variantsById = new Map<string, MenuItemVariant>(
+      menuVariants.map((variant) => [variant.id, variant])
+    );
+    let totalAmountToAdd = 0;
 
-    for (const item of items) {
-      const menuItem = menuItems.find(
-        (mi: MenuItem) => mi.id === item.menuItemId
-      );
-      if (!menuItem) continue;
+    const orderItemsToCreate = items.map((item) => {
+      const variant = variantsById.get(item.menuItemVariantId);
+      if (!variant) {
+        throw new ApiError(
+          httpStatus.INTERNAL_SERVER_ERROR,
+          "Variant mismatch"
+        );
+      }
+      const itemTotal = Number(variant.price) * item.quantity;
+      totalAmountToAdd += itemTotal;
 
-      const itemTotal = menuItem.price.mul(item.quantity);
-      totalAmount = totalAmount.add(itemTotal);
+      return {
+        orderId,
+        restaurantId,
+        menuItemVariantId: item.menuItemVariantId, // <-- Use variant ID
+        quantity: item.quantity,
+        price: variant.price, // <-- Get price from variant
+        note: item.note ?? null, // <-- Add the note
+        status: OrderItemStatus.SERVED, // Cashier adds items as SERVED
+      };
+    });
 
-      await tx.orderItem.create({
-        data: {
-          orderId,
-          restaurantId,
-          menuItemId: item.menuItemId,
-          quantity: item.quantity,
-          price: menuItem.price,
-          status: OrderItemStatus.SERVED,
-        },
-      });
-    }
+    // 4. Create all new order items
+    await tx.orderItem.createMany({
+      data: orderItemsToCreate,
+    });
+
+    // 5. Update the order total
+    const newTotalAmount = Number(order.totalAmount) + totalAmountToAdd;
 
     const finalOrder = await tx.order.update({
       where: { id: orderId },
       data: {
-        totalAmount: totalAmount,
+        totalAmount: newTotalAmount,
       },
-      include: { orderItems: true },
+      include: {
+        orderItems: {
+          include: {
+            menuItemVariant: {
+              include: {
+                menuItem: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     broadcastToRestaurant(restaurantId, {
@@ -129,7 +174,7 @@ export const addItemsToOrder = async (
 
 export const createTakeawayOrder = async (
   orderData: {
-    items: Array<{ menuItemId: string; quantity: number }>;
+    items: Array<OrderItemInput>; // <-- Updated type
   },
   restaurantId: string,
   userId: string
@@ -137,44 +182,69 @@ export const createTakeawayOrder = async (
   const { items } = orderData;
 
   return prisma.$transaction(async (tx) => {
-    const menuItems = await tx.menuItem.findMany({
+    // 1. Fetch the menuItemVariants
+    const variantIds = items.map((item) => item.menuItemVariantId);
+    const menuVariants = await tx.menuItemVariant.findMany({
       where: {
-        id: { in: items.map((item) => item.menuItemId) },
+        id: { in: variantIds },
         restaurantId,
       },
     });
 
-    const menuItemsById = new Map(menuItems.map((item) => [item.id, item]));
+    // 2. Validate all variants were found
+    if (menuVariants.length !== variantIds.length) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "One or more menu item variants are invalid."
+      );
+    }
+
+    // 3. Map variants for easy lookup and calculate total
+    const variantsById = new Map(
+      menuVariants.map((variant) => [variant.id, variant])
+    );
     let totalAmount = 0;
 
     for (const item of items) {
-      const menuItem = menuItemsById.get(item.menuItemId);
-      if (menuItem) {
-        totalAmount += Number(menuItem.price) * item.quantity;
+      const variant = variantsById.get(item.menuItemVariantId);
+      if (variant) {
+        totalAmount += Number(variant.price) * item.quantity;
       }
     }
 
+    // 4. Create the order
     const newOrder = await tx.order.create({
       data: {
         restaurantId,
         userId,
         totalAmount,
         takeAway: true,
-        status: OrderStatus.IN_PROGRESS,
+        status: OrderStatus.IN_PROGRESS, // Takeaway starts in progress
         orderItems: {
-          create: items.map((item) => ({
-            menuItemId: item.menuItemId,
-            quantity: item.quantity,
-            price: menuItemsById.get(item.menuItemId)?.price || 0,
-            status: OrderItemStatus.ORDERED,
-            restaurantId,
-          })),
+          create: items.map((item) => {
+            const variant = variantsById.get(item.menuItemVariantId);
+            return {
+              menuItemVariantId: item.menuItemVariantId, // <-- Use variant ID
+              quantity: item.quantity,
+              price: variant?.price || 0, // <-- Get price from variant
+              note: item.note ?? null, // <-- Add the note, convert undefined to null
+              status: OrderItemStatus.ORDERED, // Starts as ORDERED
+              restaurant: {
+                connect: { id: restaurantId },
+              },
+            };
+          }),
         },
       },
       include: {
         orderItems: {
           include: {
-            menuItem: true,
+            menuItemVariant: {
+              // <-- Include variant
+              include: {
+                menuItem: true,
+              },
+            },
           },
         },
       },

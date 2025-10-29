@@ -3,7 +3,7 @@
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
-import { OrderItemStatus } from "@prisma/client";
+import { OrderItemStatus, OrderStatus } from "@prisma/client";
 import { broadcastToRestaurant } from "../../websocketServer.js";
 
 /**
@@ -25,7 +25,13 @@ export const getPreparingOrders = async (restaurantId: string) => {
           status: OrderItemStatus.PREPARING,
         },
         include: {
-          menuItem: true,
+          // menuItem: true, // <-- REMOVED
+          menuItemVariant: {
+            // <-- ADDED
+            include: {
+              menuItem: true, // <-- Nested include
+            },
+          },
         },
       },
       table: true,
@@ -60,17 +66,41 @@ export const updateOrderItemStatus = async (
   const updatedOrderItem = await prisma.orderItem.update({
     where: { id: orderItemId },
     data: { status },
-    include: { order: { include: { orderItems: true, table: true } } },
+    include: {
+      // Include variant info for the item that was *just* updated
+      menuItemVariant: {
+        include: {
+          menuItem: true,
+        },
+      },
+      order: {
+        include: {
+          orderItems: {
+            // Also include variant info for all other items in the order
+            include: {
+              menuItemVariant: {
+                include: {
+                  menuItem: true,
+                },
+              },
+            },
+          },
+          table: true,
+        },
+      },
+    },
   });
 
   // Update the overall order status based on item statuses
+  // Check if all items in the *full order* are served or cancelled
   const allItems = updatedOrderItem.order.orderItems;
-  const allItemsServed = allItems.every(
+  const allItemsServedOrCancelled = allItems.every(
     (item) =>
       item.status === OrderItemStatus.SERVED ||
       item.status === OrderItemStatus.CANCELLED
   );
-  if (allItemsServed) {
+
+  if (allItemsServedOrCancelled) {
     // Ensure the order belongs to the same restaurant before updating it.
     const order = updatedOrderItem.order;
     if (!order || (order as any).restaurantId !== restaurantId) {
@@ -78,10 +108,20 @@ export const updateOrderItemStatus = async (
       throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
     }
 
-    await prisma.order.update({
-      where: { id: updatedOrderItem.orderId },
-      data: { status: "COMPLETED" },
-    });
+    // Check if all items are cancelled to set the final order status
+    const allItemsCancelled = allItems.every(
+      (item) => item.status === OrderItemStatus.CANCELLED
+    );
+    const newStatus = allItemsCancelled
+      ? OrderStatus.CANCELLED
+      : OrderStatus.COMPLETED;
+
+    if (order.status !== newStatus) {
+      await prisma.order.update({
+        where: { id: updatedOrderItem.orderId },
+        data: { status: newStatus },
+      });
+    }
   }
 
   // Broadcast the update to all connected clients
