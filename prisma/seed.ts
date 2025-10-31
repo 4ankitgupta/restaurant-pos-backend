@@ -438,12 +438,12 @@ async function main() {
   // 6. Create Tables
   await prisma.table.createMany({
     data: [
-      { tableNumber: "T1", capacity: 4, restaurantId: restaurant.id },
-      { tableNumber: "T2", capacity: 2, restaurantId: restaurant.id },
-      { tableNumber: "T3", capacity: 6, restaurantId: restaurant.id },
-      { tableNumber: "T4", capacity: 4, restaurantId: restaurant.id },
-      { tableNumber: "T5", capacity: 6, restaurantId: restaurant.id },
-      { tableNumber: "T6", capacity: 2, restaurantId: restaurant.id },
+      { tableNumber: "1", capacity: 4, restaurantId: restaurant.id },
+      { tableNumber: "2", capacity: 2, restaurantId: restaurant.id },
+      { tableNumber: "3", capacity: 6, restaurantId: restaurant.id },
+      { tableNumber: "4", capacity: 4, restaurantId: restaurant.id },
+      { tableNumber: "5", capacity: 6, restaurantId: restaurant.id },
+      { tableNumber: "6", capacity: 2, restaurantId: restaurant.id },
     ],
   });
   console.log("✅ Created tables");

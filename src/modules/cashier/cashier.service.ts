@@ -129,7 +129,7 @@ export const addItemsToOrder = async (
       return {
         orderId,
         restaurantId,
-        menuItemVariantId: item.menuItemVariantId, // <-- Use variant ID
+        menuItemVariantId: item.menuItemVariantId,
         quantity: item.quantity,
         price: variant.price, // <-- Get price from variant
         note: item.note ?? null, // <-- Add the note
@@ -224,7 +224,9 @@ export const createTakeawayOrder = async (
           create: items.map((item) => {
             const variant = variantsById.get(item.menuItemVariantId);
             return {
-              menuItemVariantId: item.menuItemVariantId, // <-- Use variant ID
+              menuItemVariant: {
+                connect: { id: item.menuItemVariantId },
+              }, // <-- Use variant ID
               quantity: item.quantity,
               price: variant?.price || 0, // <-- Get price from variant
               note: item.note ?? null, // <-- Add the note, convert undefined to null
