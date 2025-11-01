@@ -7,3 +7,10 @@ export const handleChat = z.object({
     conversationId: z.string().uuid().optional(),
   }),
 });
+
+// --- ADD THIS VALIDATION ---
+export const getConversationMessages = z.object({
+  params: z.object({
+    conversationId: z.string().uuid("Invalid conversationId"),
+  }),
+});
