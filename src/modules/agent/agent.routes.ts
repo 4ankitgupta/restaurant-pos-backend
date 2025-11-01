@@ -22,4 +22,25 @@ router.post(
   agentController.handleChat
 );
 
+// --- ADD THIS ROUTE ---
+// To get the list of all conversations for the admin
+router.get(
+  "/conversations",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  enforceTenancy,
+  agentController.getConversations
+);
+
+// --- AND ADD THIS ROUTE ---
+// To get all messages for a single, selected conversation
+router.get(
+  "/conversations/:conversationId",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  enforceTenancy,
+  validate(agentValidation.getConversationMessages),
+  agentController.getConversationMessages
+);
+
 export default router;

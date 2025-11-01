@@ -35,3 +35,41 @@ export const handleChat = asyncHandler(
       .json(new ApiResponse(httpStatus.OK, result, "Message processed"));
   }
 );
+
+// --- ADD THIS CONTROLLER ---
+export const getConversations = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const restaurantId = req.user!.restaurantId;
+
+    const conversations = await agentService.listConversations(
+      userId,
+      restaurantId
+    );
+    res
+      .status(httpStatus.OK)
+      .json(
+        new ApiResponse(httpStatus.OK, conversations, "Conversations retrieved")
+      );
+  }
+);
+
+// --- AND ADD THIS CONTROLLER ---
+export const getConversationMessages = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { conversationId } = req.params;
+    const restaurantId = req.user!.restaurantId;
+
+    if (!conversationId) {
+      throw new Error("Conversation ID is required");
+    }
+
+    const messages = await agentService.getMessagesByConversationId(
+      conversationId,
+      restaurantId
+    );
+    res
+      .status(httpStatus.OK)
+      .json(new ApiResponse(httpStatus.OK, messages, "Messages retrieved"));
+  }
+);
