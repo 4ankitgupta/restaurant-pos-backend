@@ -88,7 +88,12 @@ export const getAdminDashboardStats = async (restaurantId: string) => {
     include: {
       orderItems: {
         include: {
-          menuItem: true,
+          // FIX: Changed menuItem: true
+          menuItemVariant: {
+            include: {
+              menuItem: true,
+            },
+          },
         },
       },
       payments: true,
@@ -123,7 +128,8 @@ export const getAdminDashboardStats = async (restaurantId: string) => {
   const itemSales = recentOrders
     .flatMap((order) => order.orderItems)
     .reduce((acc, item) => {
-      const name = item.menuItem?.name ?? "Unknown Item";
+      // FIX: Updated path to get item name
+      const name = item.menuItemVariant?.menuItem?.name ?? "Unknown Item";
       acc[name] = (acc[name] || 0) + item.quantity;
       return acc;
     }, {} as Record<string, number>);

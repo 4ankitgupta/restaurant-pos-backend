@@ -77,23 +77,38 @@ export const generateItemWiseSalesReport = async (
         ...filters,
         paymentStatus: PaymentStatus.PAID,
       },
-      menuItem: {
-        categoryId: categoryId || undefined,
+      // FIX: Updated where clause
+      menuItemVariant: {
+        menuItem: {
+          categoryId: categoryId || undefined,
+        },
       },
     },
     include: {
-      menuItem: {
-        include: { category: true },
+      // FIX: Updated include clause
+      menuItemVariant: {
+        include: {
+          menuItem: {
+            include: {
+              category: true,
+            },
+          },
+        },
       },
     },
   });
 
   const itemSales = orderItems.reduce((acc, item) => {
-    const key = item.menuItemId as string;
+    // FIX: Use menuItemVariant.menuItem.id or name as key
+    const key = item.menuItemVariant?.menuItem?.id ?? "unknown";
+    if (key === "unknown") return acc; // Skip items with no variant
+
     if (!acc[key]) {
       acc[key] = {
-        itemName: item.menuItem?.name ?? "Unknown Item",
-        category: item.menuItem?.category?.name ?? "Uncategorized",
+        // FIX: Updated paths
+        itemName: item.menuItemVariant?.menuItem?.name ?? "Unknown Item",
+        category:
+          item.menuItemVariant?.menuItem?.category?.name ?? "Uncategorized",
         quantitySold: 0,
         totalValue: 0,
       };
@@ -123,8 +138,15 @@ export const generateCategorySalesReport = async (
     include: {
       menuItems: {
         include: {
-          orderItems: {
-            where: { order: { ...filters, paymentStatus: PaymentStatus.PAID } },
+          // FIX: Go through variants to get to orderItems
+          variants: {
+            include: {
+              orderItems: {
+                where: {
+                  order: { ...filters, paymentStatus: PaymentStatus.PAID },
+                },
+              },
+            },
           },
         },
       },
@@ -133,18 +155,28 @@ export const generateCategorySalesReport = async (
 
   const categorySales = categoriesWithSales
     .map((cat) => {
+      // FIX: Add nested reduce to go through variants
       const { totalValue, quantitySold } = cat.menuItems.reduce(
         (acc, menuItem) => {
-          const itemTotals = menuItem.orderItems.reduce(
-            (itemAcc, orderItem) => {
-              itemAcc.value += orderItem.price.toNumber() * orderItem.quantity;
-              itemAcc.qty += orderItem.quantity;
-              return itemAcc;
+          const variantTotals = menuItem.variants.reduce(
+            (variantAcc, variant) => {
+              const itemTotals = variant.orderItems.reduce(
+                (itemAcc, orderItem) => {
+                  itemAcc.value +=
+                    orderItem.price.toNumber() * orderItem.quantity;
+                  itemAcc.qty += orderItem.quantity;
+                  return itemAcc;
+                },
+                { value: 0, qty: 0 }
+              );
+              variantAcc.value += itemTotals.value;
+              variantAcc.qty += itemTotals.qty;
+              return variantAcc;
             },
             { value: 0, qty: 0 }
           );
-          acc.totalValue += itemTotals.value;
-          acc.quantitySold += itemTotals.qty;
+          acc.totalValue += variantTotals.value;
+          acc.quantitySold += variantTotals.qty;
           return acc;
         },
         { totalValue: 0, quantitySold: 0 }
@@ -282,7 +314,12 @@ export const generateOrderCancellationReport = async (
     },
     include: {
       order: { include: { user: { select: { id: true, name: true } } } },
-      menuItem: true,
+      // FIX: Updated include path
+      menuItemVariant: {
+        include: {
+          menuItem: true,
+        },
+      },
     },
   });
 
