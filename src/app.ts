@@ -32,6 +32,7 @@ import stockLogRoutes from "./modules/stockLog/stockLog.routes.js";
 import cashierRoutes from "./modules/cashier/cashier.routes.js";
 import dashboardRouter from "./modules/dashboard/dashboard.routes.js";
 import reportRoutes from "./modules/reports/reports.routes.js";
+import agentRoutes from "./modules/agent/agent.routes.js";
 
 const app: Application = express();
 
@@ -64,6 +65,7 @@ apiRouter.use("/stock-logs", stockLogRoutes);
 apiRouter.use("/cashier", cashierRoutes);
 apiRouter.use("/dashboard", dashboardRouter);
 apiRouter.use("/reports", reportRoutes);
+apiRouter.use("/agent", agentRoutes);
 
 // All API calls will be under /api/v1
 app.use("/api/v1", apiRouter);
