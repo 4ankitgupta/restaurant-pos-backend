@@ -35,7 +35,7 @@ export function createPrismaTool(restaurantId: string) {
     schema: schema,
     func: async ({ model, query }) => {
       // **SECURITY CHECKS**
-      // 1. Model Whitelist: Only allow querying safe, known models.
+      // 1. Model Whitelist: Only allow querying safe, known models. node prisma/seed.js
       const allowedModels = [
         "Order",
         "MenuItem",

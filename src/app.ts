@@ -33,6 +33,8 @@ import cashierRoutes from "./modules/cashier/cashier.routes.js";
 import dashboardRouter from "./modules/dashboard/dashboard.routes.js";
 import reportRoutes from "./modules/reports/reports.routes.js";
 import agentRoutes from "./modules/agent/agent.routes.js";
+import employeeRoutes from "./modules/employee/employee.routes.js";
+import attendanceRoutes from "./modules/attendance/attendance.routes.js";
 
 const app: Application = express();
 
@@ -66,6 +68,8 @@ apiRouter.use("/cashier", cashierRoutes);
 apiRouter.use("/dashboard", dashboardRouter);
 apiRouter.use("/reports", reportRoutes);
 apiRouter.use("/agent", agentRoutes);
+apiRouter.use("/employees", employeeRoutes);
+apiRouter.use("/attendance", attendanceRoutes);
 
 // All API calls will be under /api/v1
 app.use("/api/v1", apiRouter);

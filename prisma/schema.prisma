@@ -47,6 +47,10 @@ model Restaurant {
   expenses        Expense[]
   stockLogs       StockLog[]
   conversations   Conversation[]
+
+  // --- Attendance & Employees ---
+  employees         Employee[]
+  attendancePunches AttendancePunch[]
 }
 
 model User {
@@ -63,6 +67,9 @@ model User {
   restaurantId  String
   orders        Order[]
   conversations Conversation[]
+
+  // --- Optional link to Employee profile ---
+  employee      Employee?
 }
 
 model MenuCategory {
@@ -375,4 +382,47 @@ model ChatMessage {
   createdAt      DateTime     @default(now())
 
   @@index([conversationId])
+}
+
+// --- NEW: Attendance & Employees ---
+enum PunchType {
+  IN
+  OUT
+}
+
+model Employee {
+  id            String     @id @default(uuid())
+  name          String
+  employeeCode  String
+  biometricId   String?    @unique
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+
+  // Optional link to a User account
+  user          User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId        String?    @unique
+
+  attendancePunches AttendancePunch[]
+
+  @@unique([restaurantId, employeeCode])
+  @@index([userId])
+}
+
+model AttendancePunch {
+  id          String     @id @default(uuid())
+  timestamp   DateTime   @default(now())
+  type        PunchType
+  source      String?
+
+  employee    Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId  String
+
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+
+  @@index([employeeId, timestamp])
 }
