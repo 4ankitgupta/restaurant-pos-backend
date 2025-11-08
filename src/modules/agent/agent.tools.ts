@@ -94,6 +94,71 @@ export function createPrismaTool(restaurantId: string) {
   });
 }
 
+// --- NEW TOOL ---
+/**
+ * Creates a tool for executing advanced, read-only raw SQL queries.
+ * @param restaurantId The ID of the restaurant, enforced as a parameter.
+ */
+export function createRawSqlTool(restaurantId: string) {
+  return new DynamicStructuredTool({
+    name: "execute_sql_query",
+    description:
+      'Use this tool for complex, read-only SQL queries that require joins, aggregations, or subqueries (e.g., "who is present today?", "total sales this week").',
+    schema: z.object({
+      query: z
+        .string()
+        .describe(
+          'The raw PostgreSQL SELECT statement. You MUST use $1 as the placeholder for the restaurantId (e.g., WHERE "restaurantId" = $1).'
+        ),
+    }),
+    func: async ({ query }) => {
+      // **SECURITY CHECKS**
+      // 1. Basic check for read-only
+      if (!query.trim().toLowerCase().startsWith("select")) {
+        return "Error: Only SELECT statements are allowed.";
+      }
+
+      // 2. Check for keywords that could modify data or schema
+      const forbiddenKeywords = [
+        "drop",
+        "delete",
+        "update",
+        "insert",
+        "truncate",
+        "alter",
+        "create",
+        "exec",
+        "grant",
+        "revoke",
+      ];
+      const lowerQuery = query.toLowerCase();
+      if (forbiddenKeywords.some((k) => lowerQuery.includes(k))) {
+        return `Error: Query contains forbidden keywords. Only SELECT statements are allowed.`;
+      }
+
+      // 3. Ensure the restaurantId parameter is used
+      if (!query.includes("$1")) {
+        return 'Error: Your query MUST include a $1 placeholder for the "restaurantId".';
+      }
+
+      try {
+        // 4. Parameterized Query: We pass the restaurantId as a separate
+        // argument to prevent SQL injection.
+        const results = await prisma.$queryRawUnsafe(query, restaurantId);
+
+        if (!Array.isArray(results) || results.length === 0) {
+          return "No results found.";
+        }
+
+        return JSON.stringify(results, null, 2);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return `Error executing query: ${message}. Check your SQL syntax and table/column names.`;
+      }
+    },
+  });
+}
+
 /**
  * Creates a simple RAG tool for platform help.
  */
