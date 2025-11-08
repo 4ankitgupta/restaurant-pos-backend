@@ -4,7 +4,7 @@ import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
 import { OrderStatus, OrderItemStatus } from "@prisma/client";
-import { broadcastToRoom } from "../../websocket/websocket.js";
+import { broadcastToRestaurant } from "../../websocketServer.js";
 
 // Define the item type for validation, as this file also has addItemsToOrder
 type OrderItemInput = {
@@ -199,11 +199,10 @@ export const addItemsToOrder = async (
   });
 
   // FIX: Moved broadcast and return inside the function scope
-  broadcastToRoom(
-    `restaurant:${restaurantId}`,
-    "ORDER_ITEMS_UPDATED",
-    updatedOrderWithItems
-  );
+  broadcastToRestaurant(restaurantId, {
+    type: "ORDER_ITEMS_UPDATED",
+    payload: updatedOrderWithItems,
+  });
 
   return updatedOrderWithItems;
 };
