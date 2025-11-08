@@ -160,6 +160,7 @@ export const addItemsToOrder = async (
             },
           },
         },
+        table: true,
       },
     });
 
@@ -249,6 +250,7 @@ export const createTakeawayOrder = async (
             },
           },
         },
+        table: true,
       },
     });
 

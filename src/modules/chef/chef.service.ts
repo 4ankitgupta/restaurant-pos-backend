@@ -7,29 +7,23 @@ import { OrderItemStatus, OrderStatus } from "@prisma/client";
 import { broadcastToRestaurant } from "../../websocketServer.js";
 
 /**
- * Gets all orders that have at least one item in the 'PREPARING' state.
+ * Gets all active orders (IN_PROGRESS or PENDING) with all order items.
  */
 export const getPreparingOrders = async (restaurantId: string) => {
   return prisma.order.findMany({
     where: {
       restaurantId,
-      orderItems: {
-        some: {
-          status: OrderItemStatus.PREPARING,
-        },
+      status: {
+        in: [OrderStatus.IN_PROGRESS, OrderStatus.PENDING],
       },
     },
     include: {
       orderItems: {
-        where: {
-          status: OrderItemStatus.PREPARING,
-        },
+        // Include all order items regardless of status
         include: {
-          // menuItem: true, // <-- REMOVED
           menuItemVariant: {
-            // <-- ADDED
             include: {
-              menuItem: true, // <-- Nested include
+              menuItem: true,
             },
           },
         },
@@ -37,7 +31,7 @@ export const getPreparingOrders = async (restaurantId: string) => {
       table: true,
     },
     orderBy: {
-      createdAt: "asc", // Oldest orders with preparing items first
+      createdAt: "asc", // Oldest orders first
     },
   });
 };
