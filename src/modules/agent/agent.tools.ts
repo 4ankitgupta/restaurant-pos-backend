@@ -52,6 +52,8 @@ export function createPrismaTool(restaurantId: string) {
         "Payment",
         "User",
         "Table",
+        "AttendancePunch",
+        "Employee",
       ];
       const client: any = prisma as any;
       if (

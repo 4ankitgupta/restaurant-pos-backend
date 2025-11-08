@@ -58,3 +58,19 @@ export const updateEmployeeController = asyncHandler(
       );
   }
 );
+
+export const deleteEmployeeController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    if (!id) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Employee ID is required");
+    }
+    const restaurantId = req.user!.restaurantId;
+    await employeeService.deleteEmployee(id, restaurantId);
+    res
+      .status(httpStatus.OK)
+      .json(
+        new ApiResponse(httpStatus.OK, null, "Employee deleted successfully")
+      );
+  }
+);

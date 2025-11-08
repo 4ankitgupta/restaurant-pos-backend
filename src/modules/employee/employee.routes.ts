@@ -13,6 +13,7 @@ import {
   createEmployeeController,
   getAllEmployeesController,
   updateEmployeeController,
+  deleteEmployeeController,
 } from "./employee.controller.js";
 import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 
@@ -32,6 +33,7 @@ router
 
 router
   .route("/:id")
-  .patch(validate(updateEmployeeSchema), updateEmployeeController);
+  .patch(validate(updateEmployeeSchema), updateEmployeeController)
+  .delete(deleteEmployeeController);
 
 export default router;

@@ -37,9 +37,15 @@ export const createPunchController = asyncHandler(
 export const getDailyReportController = asyncHandler(
   async (req: AuthRequest, res: Response) => {
     const restaurantId = req.user!.restaurantId;
-    const { date } = req.query;
+    const { date, startDate, endDate } = req.query;
 
-    const targetDate = date ? new Date(date as string) : new Date();
+    // If startDate and endDate are provided, use startDate (or could aggregate multiple days)
+    // For now, we'll just use the first date
+    const targetDate = date
+      ? new Date(date as string)
+      : startDate
+      ? new Date(startDate as string)
+      : new Date();
 
     const report = await attendanceService.getDailyReport(
       restaurantId,

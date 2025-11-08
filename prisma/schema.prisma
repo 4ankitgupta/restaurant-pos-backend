@@ -394,7 +394,7 @@ model Employee {
   id            String     @id @default(uuid())
   name          String
   employeeCode  String
-  biometricId   String?    @unique
+  biometricId   String?
   isActive      Boolean    @default(true)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -408,7 +408,8 @@ model Employee {
 
   attendancePunches AttendancePunch[]
 
-  @@unique([restaurantId, employeeCode])
+  @@unique([restaurantId, employeeCode])  
+  @@unique([restaurantId, biometricId])
   @@index([userId])
 }
 

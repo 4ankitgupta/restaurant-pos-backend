@@ -73,10 +73,32 @@ export const updateEmployee = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Employee not found");
   }
 
+  const cleanData = {
+    ...data,
+    biometricId: data.biometricId === "" ? null : data.biometricId,
+  };
+
   // TODO: Add validation checks for uniqueness if employeeCode or userId is being changed
 
   return prisma.employee.update({
     where: { id: employeeId },
     data,
+  });
+};
+
+export const deleteEmployee = async (
+  employeeId: string,
+  restaurantId: string
+) => {
+  const employee = await prisma.employee.findFirst({
+    where: { id: employeeId, restaurantId },
+  });
+
+  if (!employee) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Employee not found");
+  }
+
+  return prisma.employee.delete({
+    where: { id: employeeId },
   });
 };
