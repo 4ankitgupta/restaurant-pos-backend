@@ -18,23 +18,16 @@ export const getActiveOrders = async (restaurantId: string) => {
     where: {
       restaurantId,
       status: {
-        // Correctly fetches IN_PROGRESS orders for the kitchen
+        // Fetches IN_PROGRESS and PENDING orders for the kitchen
         in: [OrderStatus.IN_PROGRESS, OrderStatus.PENDING],
       },
     },
     include: {
       table: true,
       orderItems: {
-        where: {
-          // Fetches only items the kitchen needs to act on
-          status: {
-            in: [OrderItemStatus.ORDERED, OrderItemStatus.PREPARING],
-          },
-        },
+        // Include all order items regardless of status
         include: {
-          // menuItem: true, // <-- REMOVED
           menuItemVariant: {
-            // <-- ADDED
             include: {
               menuItem: true,
             },

@@ -2,6 +2,7 @@ import prisma from "../../db/index.js";
 import { TableStatus, OrderStatus } from "@prisma/client";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
+import { broadcastToRestaurant } from "../../websocketServer.js";
 
 // export const getAllTables = async (restaurantId: string) => {
 //   return prisma.table.findMany({ where: { restaurantId } });
@@ -189,7 +190,7 @@ export const seatTable = async (
   }
 
   // Use a transaction to seat the table and create an order
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const updatedTable = await tx.table.update({
       where: { id: tableId },
       data: { status: TableStatus.Occupied },
@@ -203,10 +204,30 @@ export const seatTable = async (
         totalAmount: 0,
         status: OrderStatus.PENDING,
       },
+      include: {
+        orderItems: {
+          include: {
+            menuItemVariant: {
+              include: {
+                menuItem: true,
+              },
+            },
+          },
+        },
+        table: true,
+      },
     });
 
     return { updatedTable, newOrder };
   });
+
+  // Broadcast the new order to all connected clients in this restaurant
+  broadcastToRestaurant(restaurantId, {
+    type: "NEW_ORDER",
+    payload: result.newOrder,
+  });
+
+  return result;
 };
 
 export const updateTableStatus = async (
