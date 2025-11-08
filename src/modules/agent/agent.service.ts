@@ -11,8 +11,16 @@ import prisma from "../../db/index.js";
 import {
   createPrismaTool,
   createPlatformHelpTool,
-  createRawSqlTool, // --- ADD THIS IMPORT ---
+  createRawSqlTool,
 } from "./agent.tools.js";
+import {
+  createTodaysSalesSummaryTool,
+  createPopularItemsThisWeekTool,
+  createMonthlyRevenueReportTool,
+  createLowStockItemsTool,
+  createYesterdayPerformanceTool,
+  createOrderTrendsAnalysisTool,
+} from "./analytics.tools.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
 
@@ -476,11 +484,17 @@ export async function getAgentResponse(params: {
   });
 
   // 2️⃣ Initialize Tools
-  // --- ADD THE NEW TOOL HERE ---
   const tools = [
     createPrismaTool(restaurantId),
-    createRawSqlTool(restaurantId), // <-- ADDED
+    createRawSqlTool(restaurantId),
     createPlatformHelpTool(),
+    // Analytics tools for sample queries
+    createTodaysSalesSummaryTool(restaurantId),
+    createPopularItemsThisWeekTool(restaurantId),
+    createMonthlyRevenueReportTool(restaurantId),
+    createLowStockItemsTool(restaurantId),
+    createYesterdayPerformanceTool(restaurantId),
+    createOrderTrendsAnalysisTool(restaurantId),
   ];
 
   // 3️⃣ Create or Fetch Chat History
