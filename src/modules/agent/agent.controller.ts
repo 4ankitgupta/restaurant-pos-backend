@@ -73,3 +73,29 @@ export const getConversationMessages = asyncHandler(
       .json(new ApiResponse(httpStatus.OK, messages, "Messages retrieved"));
   }
 );
+
+// --- Delete Conversation Controller ---
+export const deleteConversation = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const { conversationId } = req.params;
+    const restaurantId = req.user!.restaurantId;
+
+    if (!conversationId) {
+      throw new Error("Conversation ID is required");
+    }
+
+    const result = await agentService.deleteConversation(
+      conversationId,
+      restaurantId
+    );
+    res
+      .status(httpStatus.OK)
+      .json(
+        new ApiResponse(
+          httpStatus.OK,
+          result,
+          "Conversation deleted successfully"
+        )
+      );
+  }
+);

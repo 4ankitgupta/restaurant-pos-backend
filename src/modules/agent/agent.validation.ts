@@ -14,3 +14,9 @@ export const getConversationMessages = z.object({
     conversationId: z.string().uuid("Invalid conversationId"),
   }),
 });
+
+export const deleteConversation = z.object({
+  params: z.object({
+    conversationId: z.string().uuid("Invalid conversationId"),
+  }),
+});

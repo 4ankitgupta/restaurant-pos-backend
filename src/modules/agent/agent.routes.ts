@@ -43,4 +43,14 @@ router.get(
   agentController.getConversationMessages
 );
 
+// --- Delete Conversation Route ---
+router.delete(
+  "/conversations/:conversationId",
+  authenticateJWT,
+  authorizeRoles("ADMIN"),
+  enforceTenancy,
+  validate(agentValidation.deleteConversation),
+  agentController.deleteConversation
+);
+
 export default router;

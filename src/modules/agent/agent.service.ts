@@ -617,3 +617,29 @@ export async function getMessagesByConversationId(
 
   return messages;
 }
+
+// --- Delete Conversation ---
+export async function deleteConversation(
+  conversationId: string,
+  restaurantId: string
+) {
+  const conversation = await prisma.conversation.findFirst({
+    where: { id: conversationId, restaurantId: restaurantId },
+  });
+
+  if (!conversation) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Conversation not found");
+  }
+
+  // Delete all messages in the conversation first (cascade delete)
+  await prisma.chatMessage.deleteMany({
+    where: { conversationId: conversationId },
+  });
+
+  // Delete the conversation
+  await prisma.conversation.delete({
+    where: { id: conversationId },
+  });
+
+  return { success: true, message: "Conversation deleted successfully" };
+}
