@@ -57,66 +57,88 @@ export const updateOrderItemStatus = async (
   // if (orderItem.status === OrderItemStatus.ORDERED && status === OrderItemStatus.PREPARING) { ... }
   // You mentioned the logic would be decided later. This is where it would go.
 
-  const updatedOrderItem = await prisma.orderItem.update({
-    where: { id: orderItemId },
-    data: { status },
-    include: {
-      // Include variant info for the item that was *just* updated
-      menuItemVariant: {
-        include: {
-          menuItem: true,
+  const updatedOrderItem = await prisma.$transaction(async (tx) => {
+    const item = await tx.orderItem.update({
+      where: { id: orderItemId },
+      data: { status },
+      include: {
+        // Include variant info for the item that was *just* updated
+        menuItemVariant: {
+          include: {
+            menuItem: true,
+          },
         },
-      },
-      order: {
-        include: {
-          orderItems: {
-            // Also include variant info for all other items in the order
-            include: {
-              menuItemVariant: {
-                include: {
-                  menuItem: true,
+        order: {
+          include: {
+            orderItems: {
+              // Also include variant info for all other items in the order
+              include: {
+                menuItemVariant: {
+                  include: {
+                    menuItem: true,
+                  },
                 },
               },
             },
+            table: true,
           },
-          table: true,
         },
       },
-    },
-  });
+    });
 
-  // Update the overall order status based on item statuses
-  // Check if all items in the *full order* are served or cancelled
-  const allItems = updatedOrderItem.order.orderItems;
-  const allItemsServedOrCancelled = allItems.every(
-    (item) =>
-      item.status === OrderItemStatus.SERVED ||
-      item.status === OrderItemStatus.CANCELLED
-  );
+    // Recalculate order total excluding cancelled items
+    const allItems = item.order.orderItems;
+    const newTotalAmount = allItems
+      .filter((orderItem) => orderItem.status !== OrderItemStatus.CANCELLED)
+      .reduce((sum, orderItem) => {
+        return sum + Number(orderItem.price) * orderItem.quantity;
+      }, 0);
 
-  if (allItemsServedOrCancelled) {
-    // Ensure the order belongs to the same restaurant before updating it.
-    const order = updatedOrderItem.order;
-    if (!order || (order as any).restaurantId !== restaurantId) {
-      // If there is a mismatch, act like the resource doesn't exist to avoid info leak
-      throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
-    }
-
-    // Check if all items are cancelled to set the final order status
-    const allItemsCancelled = allItems.every(
-      (item) => item.status === OrderItemStatus.CANCELLED
+    // Update the overall order status based on item statuses
+    // Check if all items in the *full order* are served or cancelled
+    const allItemsServedOrCancelled = allItems.every(
+      (orderItem) =>
+        orderItem.status === OrderItemStatus.SERVED ||
+        orderItem.status === OrderItemStatus.CANCELLED
     );
-    const newStatus = allItemsCancelled
-      ? OrderStatus.CANCELLED
-      : OrderStatus.COMPLETED;
 
-    if (order.status !== newStatus) {
-      await prisma.order.update({
-        where: { id: updatedOrderItem.orderId },
-        data: { status: newStatus },
-      });
+    let orderUpdateData: any = { totalAmount: newTotalAmount };
+
+    if (allItemsServedOrCancelled) {
+      // Ensure the order belongs to the same restaurant before updating it.
+      const order = item.order;
+      if (!order || (order as any).restaurantId !== restaurantId) {
+        // If there is a mismatch, act like the resource doesn't exist to avoid info leak
+        throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
+      }
+
+      // Check if all items are cancelled to set the final order status
+      const allItemsCancelled = allItems.every(
+        (orderItem) => orderItem.status === OrderItemStatus.CANCELLED
+      );
+      const newStatus = allItemsCancelled
+        ? OrderStatus.CANCELLED
+        : OrderStatus.COMPLETED;
+
+      if (order.status !== newStatus) {
+        orderUpdateData.status = newStatus;
+      }
     }
-  }
+
+    // Update the order with the recalculated total and possibly new status
+    await tx.order.update({
+      where: { id: item.orderId },
+      data: orderUpdateData,
+    });
+
+    // Update the order object with the new total for the broadcast
+    item.order.totalAmount = newTotalAmount as any;
+    if (orderUpdateData.status) {
+      item.order.status = orderUpdateData.status;
+    }
+
+    return item;
+  });
 
   // Broadcast the update to all connected clients
   broadcastToRestaurant(restaurantId, {

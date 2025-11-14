@@ -3,7 +3,12 @@
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
-import { OrderStatus, OrderItemStatus } from "@prisma/client";
+import {
+  OrderStatus,
+  OrderItemStatus,
+  type Order,
+  type OrderItem,
+} from "@prisma/client";
 import { broadcastToRestaurant } from "../../websocketServer.js";
 
 // Define the item type for validation, as this file also has addItemsToOrder
@@ -13,8 +18,26 @@ type OrderItemInput = {
   note?: string;
 };
 
+// Helper function to recalculate order total excluding cancelled items
+const recalculateOrderTotal = (orderItems: OrderItem[]): number => {
+  return orderItems
+    .filter((item) => item.status !== OrderItemStatus.CANCELLED)
+    .reduce((sum, item) => {
+      return sum + Number(item.price) * item.quantity;
+    }, 0);
+};
+
+// Helper function to correct order total if it includes cancelled items
+const correctOrderTotal = (order: any): any => {
+  if (order && order.orderItems) {
+    const correctTotal = recalculateOrderTotal(order.orderItems);
+    return { ...order, totalAmount: correctTotal };
+  }
+  return order;
+};
+
 export const getActiveOrders = async (restaurantId: string) => {
-  return prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: {
       restaurantId,
       status: {
@@ -39,6 +62,9 @@ export const getActiveOrders = async (restaurantId: string) => {
       createdAt: "asc",
     },
   });
+
+  // Correct totals for all orders
+  return orders.map(correctOrderTotal);
 };
 
 export const getOrderDetails = async (
@@ -65,7 +91,7 @@ export const getOrderDetails = async (
   if (!order) {
     throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
   }
-  return order;
+  return correctOrderTotal(order);
 };
 
 export const getActiveOrderByTable = async (
@@ -102,7 +128,7 @@ export const getActiveOrderByTable = async (
       "No active order found for this table"
     );
   }
-  return order;
+  return correctOrderTotal(order);
 };
 
 export const addItemsToOrder = async (
@@ -201,7 +227,7 @@ export const addItemsToOrder = async (
 };
 
 export const getAllOrders = async (restaurantId: string) => {
-  return prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     where: {
       restaurantId,
     },
@@ -223,4 +249,7 @@ export const getAllOrders = async (restaurantId: string) => {
       createdAt: "desc",
     },
   });
+
+  // Correct totals for all orders
+  return orders.map(correctOrderTotal);
 };

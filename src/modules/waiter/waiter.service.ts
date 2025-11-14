@@ -222,33 +222,52 @@ export const updateOrderItemStatus = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Order item not found");
   }
 
-  const updatedOrderItem = await prisma.orderItem.update({
-    where: { id: orderItemId },
-    data: { status },
-    include: {
-      order: {
-        include: {
-          orderItems: {
-            include: {
-              menuItemVariant: {
-                include: {
-                  menuItem: true,
+  return await prisma.$transaction(async (tx) => {
+    const updatedOrderItem = await tx.orderItem.update({
+      where: { id: orderItemId },
+      data: { status },
+      include: {
+        order: {
+          include: {
+            orderItems: {
+              include: {
+                menuItemVariant: {
+                  include: {
+                    menuItem: true,
+                  },
                 },
               },
             },
+            table: true,
           },
-          table: true,
         },
       },
-    },
-  });
+    });
 
-  broadcastToRestaurant(restaurantId, {
-    type: "ORDER_ITEM_STATUS_UPDATE",
-    payload: updatedOrderItem,
-  });
+    // Recalculate order total excluding cancelled items
+    const orderItems = updatedOrderItem.order.orderItems;
+    const newTotalAmount = orderItems
+      .filter((item) => item.status !== OrderItemStatus.CANCELLED)
+      .reduce((sum, item) => {
+        return sum + Number(item.price) * item.quantity;
+      }, 0);
 
-  return updatedOrderItem;
+    // Update the order with the recalculated total
+    await tx.order.update({
+      where: { id: updatedOrderItem.orderId },
+      data: { totalAmount: newTotalAmount },
+    });
+
+    // Update the order object with the new total for the broadcast
+    updatedOrderItem.order.totalAmount = newTotalAmount as any;
+
+    broadcastToRestaurant(restaurantId, {
+      type: "ORDER_ITEM_STATUS_UPDATE",
+      payload: updatedOrderItem,
+    });
+
+    return updatedOrderItem;
+  });
 };
 
 export const completeOrder = async (orderId: string, restaurantId: string) => {
