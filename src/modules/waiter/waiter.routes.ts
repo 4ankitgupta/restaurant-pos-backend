@@ -25,7 +25,12 @@ router.post(
   "/orders",
   authenticateJWT,
   enforceTenancy,
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.MANAGER,
+    UserRole.CASHIER,
+    UserRole.ADMIN
+  ), // Cashier added
   validate(createOrderSchema),
   createOrderController
 );
@@ -34,7 +39,12 @@ router.post(
   "/orders/:orderId/items",
   authenticateJWT,
   enforceTenancy,
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.MANAGER,
+    UserRole.CASHIER,
+    UserRole.ADMIN
+  ), // Cashier added
   validate(addItemsToOrderSchema),
   addItemsToOrderController
 );
@@ -42,7 +52,12 @@ router.post(
 router.patch(
   "/order-items/:orderItemId/status",
   authenticateJWT,
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.MANAGER,
+    UserRole.CASHIER,
+    UserRole.ADMIN
+  ), // Cashier added (optional, but good for control)
   validate(updateOrderItemStatusSchema),
   updateOrderItemStatusController
 );
@@ -50,7 +65,12 @@ router.patch(
 router.patch(
   "/orders/:orderId/complete",
   authenticateJWT,
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.MANAGER,
+    UserRole.CASHIER,
+    UserRole.ADMIN
+  ), // Cashier added
   validate(completeOrderSchema),
   completeOrderController
 );
