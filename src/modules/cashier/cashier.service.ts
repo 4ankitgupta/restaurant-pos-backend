@@ -115,6 +115,15 @@ export const addItemsToOrder = async (
     );
     let totalAmountToAdd = 0;
 
+    // --- CHANGED LOGIC START ---
+    // If order is COMPLETED, items are SERVED immediately (e.g. over-the-counter add-on)
+    // If order is NOT completed (Pending/In Progress), items are ORDERED (sent to kitchen)
+    const newItemStatus =
+      order.status === OrderStatus.COMPLETED
+        ? OrderItemStatus.SERVED
+        : OrderItemStatus.ORDERED;
+    // --- CHANGED LOGIC END ---
+
     const orderItemsToCreate = items.map((item) => {
       const variant = variantsById.get(item.menuItemVariantId);
       if (!variant) {
@@ -133,7 +142,7 @@ export const addItemsToOrder = async (
         quantity: item.quantity,
         price: variant.price, // <-- Get price from variant
         note: item.note ?? null, // <-- Add the note
-        status: OrderItemStatus.SERVED, // Cashier adds items as SERVED
+        status: newItemStatus, // Use the determined status
       };
     });
 
@@ -145,10 +154,22 @@ export const addItemsToOrder = async (
     // 5. Update the order total
     const newTotalAmount = Number(order.totalAmount) + totalAmountToAdd;
 
+    // --- CHANGED LOGIC START ---
+    // If we added items as ORDERED to a PENDING order, switch it to IN_PROGRESS
+    let newOrderStatus = order.status;
+    if (
+      newItemStatus === OrderItemStatus.ORDERED &&
+      order.status === OrderStatus.PENDING
+    ) {
+      newOrderStatus = OrderStatus.IN_PROGRESS;
+    }
+    // --- CHANGED LOGIC END ---
+
     const finalOrder = await tx.order.update({
       where: { id: orderId },
       data: {
         totalAmount: newTotalAmount,
+        status: newOrderStatus,
       },
       include: {
         orderItems: {

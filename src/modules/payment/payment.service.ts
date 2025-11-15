@@ -37,9 +37,8 @@ export const createPayment = async (paymentData: any, restaurantId: string) => {
 
   if (totalPaid >= order.totalAmount) {
     paymentStatus = PaymentStatus.PAID;
-    if (order.takeAway) {
-      orderStatus = OrderStatus.COMPLETED;
-    }
+    // Always mark as COMPLETED if fully paid, regardless of order type
+    orderStatus = OrderStatus.COMPLETED;
   }
 
   const updatedOrder = await prisma.order.update({
