@@ -227,6 +227,12 @@ export const seatTable = async (
     payload: result.newOrder,
   });
 
+  // Broadcast the table status update
+  broadcastToRestaurant(restaurantId, {
+    type: "TABLE_UPDATE",
+    payload: result.updatedTable,
+  });
+
   return result;
 };
 
@@ -243,8 +249,16 @@ export const updateTableStatus = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Table not found");
   }
 
-  return prisma.table.update({
+  const updatedTable = await prisma.table.update({
     where: { id: tableId },
     data: { status },
   });
+
+  // Broadcast the status change
+  broadcastToRestaurant(restaurantId, {
+    type: "TABLE_UPDATE",
+    payload: updatedTable,
+  });
+
+  return updatedTable;
 };
