@@ -4,6 +4,7 @@ import httpStatus from "http-status";
 import {
   OrderStatus,
   OrderItemStatus,
+  TableStatus,
   type MenuItemVariant,
 } from "@prisma/client";
 import { broadcastToRestaurant } from "../../websocketServer.js";
@@ -72,10 +73,13 @@ export const createOrder = async (
           create: items.map((item) => {
             const variant = variantsById.get(item.menuItemVariantId);
             return {
-              menuItemVariantId: item.menuItemVariantId, // <-- Use variant ID
+              // Use connect for the relation instead of setting the ID directly
+              menuItemVariant: {
+                connect: { id: item.menuItemVariantId },
+              },
               quantity: item.quantity,
-              price: variant?.price || 0, // <-- Get price from variant
-              note: item.note ?? null, // <-- Add the note
+              price: variant?.price || 0,
+              note: item.note ?? null,
               status: OrderItemStatus.ORDERED,
               restaurant: {
                 connect: { id: restaurantId },
@@ -99,9 +103,22 @@ export const createOrder = async (
       },
     });
 
+    // 5. UPDATE TABLE STATUS TO OCCUPIED
+    const updatedTable = await tx.table.update({
+      where: { id: tableId },
+      data: { status: TableStatus.Occupied },
+    });
+
+    // Broadcast the new order
     broadcastToRestaurant(restaurantId, {
       type: "NEW_ORDER",
       payload: newOrder,
+    });
+
+    // Broadcast the table status update
+    broadcastToRestaurant(restaurantId, {
+      type: "TABLE_UPDATE",
+      payload: updatedTable,
     });
 
     return newOrder;
