@@ -115,10 +115,15 @@ export const createOrder = async (
       payload: newOrder,
     });
 
-    // Broadcast the table status update
+    // Broadcast the table status update with current order status so UI can reflect it
+    const tableUpdatePayload = {
+      ...updatedTable,
+      orderStatus: newOrder.status,
+    } as typeof updatedTable & { orderStatus: OrderStatus };
+
     broadcastToRestaurant(restaurantId, {
       type: "TABLE_UPDATE",
-      payload: updatedTable,
+      payload: tableUpdatePayload,
     });
 
     return newOrder;
@@ -220,6 +225,17 @@ export const addItemsToOrder = async (
     broadcastToRestaurant(restaurantId, {
       type: "ORDER_ITEMS_UPDATED",
       payload: finalOrder,
+    });
+
+    // If status transitioned (e.g., PENDING -> IN_PROGRESS), inform table board with current order status
+    const tableUpdatePayload = {
+      ...finalOrder.table,
+      orderStatus: finalOrder.status,
+    } as typeof finalOrder.table & { orderStatus: OrderStatus };
+
+    broadcastToRestaurant(restaurantId, {
+      type: "TABLE_UPDATE",
+      payload: tableUpdatePayload,
     });
 
     return finalOrder;
