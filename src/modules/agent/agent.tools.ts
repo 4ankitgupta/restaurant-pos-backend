@@ -19,6 +19,12 @@ export function createPrismaTool(restaurantId: string) {
       .object({
         where: z.any().optional().describe('The "where" clause for filtering'),
         select: z.any().optional().describe('The "select" clause for fields'),
+        include: z
+          .any()
+          .optional()
+          .describe(
+            'The "include" clause for fetching related data (e.g., order with table)'
+          ),
         orderBy: z
           .any()
           .optional()
@@ -31,7 +37,7 @@ export function createPrismaTool(restaurantId: string) {
   return new DynamicStructuredTool({
     name: "restaurant_database_query",
     description:
-      'Use this tool to query the restaurant database. You must provide a valid Prisma query JSON object. Do not use this for "how-to" questions.',
+      'Use this tool to query the restaurant database. You must provide a valid Prisma query JSON object. Use "include" to fetch related data (e.g., order with table). Do not use this for "how-to" questions.',
     schema: schema,
     func: async ({ model, query }) => {
       // **SECURITY CHECKS**
@@ -113,12 +119,9 @@ export function createRawSqlTool(restaurantId: string) {
     }),
     func: async ({ query }) => {
       // **SECURITY CHECKS**
-      // 1. Basic check for read-only
-      if (!query.trim().toLowerCase().startsWith("select")) {
-        return "Error: Only SELECT statements are allowed.";
-      }
+      const lowerQuery = query.trim().toLowerCase();
 
-      // 2. Check for keywords that could modify data or schema
+      // 1. Check for forbidden mutation keywords
       const forbiddenKeywords = [
         "drop",
         "delete",
@@ -131,9 +134,15 @@ export function createRawSqlTool(restaurantId: string) {
         "grant",
         "revoke",
       ];
-      const lowerQuery = query.toLowerCase();
       if (forbiddenKeywords.some((k) => lowerQuery.includes(k))) {
-        return `Error: Query contains forbidden keywords. Only SELECT statements are allowed.`;
+        return `Error: Query contains forbidden keywords (${forbiddenKeywords.join(
+          ", "
+        )}). Only SELECT queries are allowed.`;
+      }
+
+      // 2. Allow queries starting with WITH (CTEs) or SELECT
+      if (!/^\s*(with|select)/i.test(lowerQuery)) {
+        return "Error: Only SELECT queries (with optional WITH clause for CTEs) are allowed.";
       }
 
       // 3. Ensure the restaurantId parameter is used

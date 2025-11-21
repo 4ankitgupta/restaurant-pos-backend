@@ -8,463 +8,54 @@ import { HumanMessage, AIMessage, BaseMessage } from "@langchain/core/messages";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import config from "../../config/index.js";
 import prisma from "../../db/index.js";
+import { createPrismaTool, createRawSqlTool } from "./agent.tools.js";
 import {
-  createPrismaTool,
-  createPlatformHelpTool,
-  createRawSqlTool,
-} from "./agent.tools.js";
-import {
-  createTodaysSalesSummaryTool,
-  createPopularItemsThisWeekTool,
-  createMonthlyRevenueReportTool,
-  createLowStockItemsTool,
-  createYesterdayPerformanceTool,
-  createOrderTrendsAnalysisTool,
-} from "./analytics.tools.js";
+  createSalesAnalyticsTool,
+  createInventoryTool,
+  createPopularItemsTool,
+} from "./new_analytics.tools.js";
+import { createKnowledgeBaseTool } from "./knowledge.tools.js";
+import { getMinimizedSchema } from "./schema.helper.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
 
-// --- NEW: Add the entire Prisma Schema here ---
-const PRISMA_SCHEMA = `
-generator client {
-  provider = "prisma-client-js"
-}
+// --- Get the minimized schema (token-efficient) ---
+const MINIMIZED_SCHEMA = getMinimizedSchema();
 
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
+// --- Updated System Prompt (Token-efficient) ---
+const SYSTEM_PROMPT = `You are "Rasoi AI", a helpful assistant for restaurant owners and staff.
+You must be polite, professional, and helpful. You can respond in English or Hindi based on the user's language.
 
-enum UserRole {
-  ADMIN
-  MANAGER
-  CASHIER
-  WAITER
-  KITCHEN_STAFF
-}
+**CRITICAL RULES:**
+1. **NEVER BE TECHNICAL**: Do not mention "tools", "database", "tables", "SQL", "queries", "schemas", or technical field names.
+2. **PRESENT DATA CLEANLY**: Never show UUIDs or technical IDs. Summarize information in a user-friendly way.
+3. **BE HONEST**: If you cannot find information, say so. Do not make up data.
+4. **CLARIFY WHEN NEEDED**: If a request is unclear, ask for clarification in simple language.
 
-model Restaurant {
-  id              String            @id @default(uuid())
-  name            String
-  email           String?           @unique
-  phone           String?
-  address         String?
-  isActive        Boolean           @default(true)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  subscription    Subscription?
-  users           User[]
-  menuCategories  MenuCategory[]
-  menuItems       MenuItem[]
-  variants        MenuItemVariant[]
-  tables          Table[]
-  orders          Order[]
-  orderItems      OrderItem[]
-  payments        Payment[]
-  inventoryItems  InventoryItem[]
-  purchaseOrders  PurchaseOrder[]
-  purchaseItems   PurchaseItem[]
-  suppliers       Supplier[]
-  expenses        Expense[]
-  stockLogs       StockLog[]
-  conversations   Conversation[]
-  employees         Employee[]
-  attendancePunches AttendancePunch[]
-}
+**YOUR CAPABILITIES:**
+- Answer questions about sales, revenue, orders, payments
+- Check inventory levels and low stock items
+- Find popular menu items and analyze trends
+- Look up employee, table, and order information
+- Provide how-to guides for using the platform
+- Analyze data across any date range
 
-model User {
-  id            String     @id @default(uuid())
-  name          String
-  email         String     @unique
-  phone         String?
-  passwordHash  String
-  role          UserRole
-  isActive      Boolean    @default(true)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-  orders        Order[]
-  conversations Conversation[]
-  employee      Employee?
-}
+**DATABASE TOOLS:**
+You have access to tools for querying the restaurant's data:
+- \`restaurant_database_query\`: For simple lookups (e.g., "show menu items", "find table 5"). Use \`include\` for related data.
+- \`execute_sql_query\`: For complex analytics requiring joins/aggregations. Always use $1 for restaurantId. Wrap names in double-quotes.
+- \`get_sales_analytics\`: For sales/revenue analysis across any date range
+- \`check_inventory_status\`: For inventory checks and low stock items
+- \`get_popular_items\`: For top-selling item analysis
+- \`search_help_guide\`: For "how-to" questions about using the platform
 
-model MenuCategory {
-  id            String     @id @default(uuid())
-  name          String
-  description   String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-  menuItems     MenuItem[]
-}
+**DATABASE SCHEMA:**
+${MINIMIZED_SCHEMA}
 
-model MenuItem {
-  id              String        @id @default(uuid())
-  name            String
-  description     String?
-  isAvailable     Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId    String
-  category        MenuCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId      String?
-  variants        MenuItemVariant[]
-}
-model MenuItemVariant {
-  id           String    @id @default(uuid())
-  name         String 
-  price        Decimal
-  isAvailable  Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  menuItem     MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
-  menuItemId   String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  orderItems   OrderItem[]
-}
-
-enum TableStatus {
-  Available
-  Occupied
-  Reserved
-  NeedCleaning
-}
-
-model Table {
-  id           String      @id @default(uuid())
-  tableNumber  String
-  capacity     Int
-  status       TableStatus @default(Available)
-  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  orders       Order[]
-}
-
-enum OrderStatus {
-  PENDING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
-enum OrderItemStatus {
-  ORDERED
-  PREPARING
-  PREPARED
-  SERVED
-  CANCELLED
-}
-
-enum PaymentStatus {
-  UNPAID
-  PAID
-  PARTIAL
-  REFUNDED
-}
-
-model Order {
-  id            String        @id @default(uuid())
-  status        OrderStatus   @default(PENDING)
-  totalAmount   Decimal       @default(0.0)
-  paymentStatus PaymentStatus @default(UNPAID)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  takeAway      Boolean       @default(false)
-  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-  table         Table?        @relation(fields: [tableId], references: [id])
-  tableId       String?
-  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId        String?
-  orderItems    OrderItem[]
-  payments      Payment[]
-}
-
-model OrderItem {
-  id           String          @id @default(uuid())
-  quantity     Int
-  price        Decimal
-  status       OrderItemStatus @default(ORDERED)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  note         String? 
-  restaurant   Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId      String
-  menuItemVariant   MenuItemVariant? @relation(fields: [menuItemVariantId], references: [id], onDelete: SetNull)
-  menuItemVariantId String?
-}
-
-enum PaymentMethod {
-  CASH
-  CARD
-  UPI
-  WALLET
-}
-
-enum TransactionStatus {
-  SUCCESS
-  FAILED
-  PENDING
-}
-
-model Payment {
-  id             String            @id @default(uuid())
-  amount         Decimal
-  paymentMethod  PaymentMethod
-  status         TransactionStatus @default(SUCCESS)
-  transactionId  String?
-  createdAt      DateTime          @default(now())
-  restaurant     Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId   String
-  order          Order             @relation(fields: [orderId], references: [id], onDelete:Cascade)
-  orderId        String
-}
-
-model InventoryItem {
-  id            String         @id @default(uuid())
-  name          String
-  unit          String // e.g., kg, liter, piece
-  currentStock  Float          @default(0)
-  reorderLevel  Float          @default(0)
-  lastUpdated   DateTime       @updatedAt
-  restaurant    Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-  purchaseItems PurchaseItem[]
-  stockLogs     StockLog[]
-  createdAt     DateTime       @default(now())
-}
-
-model Supplier {
-  id            String          @id @default(uuid())
-  name          String
-  contactPerson String?
-  phone         String?
-  email         String?
-  address       String?
-  restaurant    Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-  purchaseOrders PurchaseOrder[]
-  createdAt     DateTime        @default(now())
-}
-
-model PurchaseOrder {
-  id            String         @id @default(uuid())
-  supplier      Supplier       @relation(fields: [supplierId], references: [id])
-  supplierId    String
-  restaurant    Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-  invoiceNumber String?
-  totalAmount   Float
-  purchaseDate  DateTime       @default(now())
-  purchaseItems PurchaseItem[]
-  createdAt     DateTime       @default(now())
-  stockLogs       StockLog[]
-}
-
-model PurchaseItem {
-  id              String        @id @default(uuid())
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  purchaseOrderId String
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
-  inventoryItemId String
-  quantity        Float
-  unitPrice       Float
-  totalPrice      Float
-  restaurant      Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId    String
-}
-
-enum StockChangeType {
-  ADD
-  REMOVE
-  ADJUST
-  WASTAGE
-  USAGE
-}
-
-model StockLog {
-  id              String          @id @default(uuid())
-  restaurant      Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId    String
-  inventoryItem   InventoryItem   @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
-  inventoryItemId String
-  changeType      StockChangeType
-  quantity        Float
-  remarks         String?
-  purchaseOrder   PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
-  purchaseOrderId String?
-  createdAt       DateTime        @default(now())
-}
-
-model Expense {
-  id           String     @id @default(uuid())
-  description  String
-  amount       Decimal
-  expenseDate  DateTime
-  createdAt    DateTime   @default(now())
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-}
-
-model SuperAdmin {
-  id           String   @id @default(uuid())
-  email        String   @unique
-  name         String
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model Plan {
-  id            String         @id @default(uuid())
-  name          String
-  price         Decimal
-  features      Json?
-  subscriptions Subscription[]
-}
-
-enum SubscriptionStatus {
-  TRIAL
-  ACTIVE
-  PAST_DUE
-  CANCELED
-}
-
-model Subscription {
-  id             String             @id @default(uuid())
-  restaurant     Restaurant         @relation(fields: [restaurantId], references: [id])
-  restaurantId   String             @unique
-  plan           Plan               @relation(fields: [planId], references: [id])
-  planId         String
-  status         SubscriptionStatus @default(TRIAL)
-  trialEndsAt    DateTime?
-  nextBillingDate DateTime?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-}
-
-model Announcement {
-  id          String   @id @default(uuid())
-  title       String
-  content     String
-  publishedAt DateTime @default(now())
-}
-
-model SystemSetting {
-  key         String @id @unique
-  value       Json
-  description String?
-}
-
-model Conversation {
-  id           String     @id @default(uuid())
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  messages     ChatMessage[]
-  @@index([userId])
-  @@index([restaurantId])
-}
-
-enum ChatMessageRole {
-  USER
-  AI
-}
-
-model ChatMessage {
-  id             String       @id @default(uuid())
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  conversationId String
-  role           ChatMessageRole
-  content        String       @db.Text
-  createdAt      DateTime     @default(now())
-  @@index([conversationId])
-}
-
-enum PunchType {
-  IN
-  OUT
-}
-
-model Employee {
-  id            String     @id @default(uuid())
-  name          String
-  employeeCode  String
-  biometricId   String?
-  isActive      Boolean    @default(true)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId  String
-  user          User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId        String?    @unique
-  attendancePunches AttendancePunch[]
-  @@unique([restaurantId, employeeCode])  
-  @@unique([restaurantId, biometricId])
-  @@index([userId])
-}
-
-model AttendancePunch {
-  id          String     @id @default(uuid())
-  timestamp   DateTime   @default(now())
-  type        PunchType
-  source      String?
-  employee    Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  employeeId  String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  @@index([employeeId, timestamp])
-}
-`;
-
-// --- NEW: Updated System Prompt ---
-const SYSTEM_PROMPT = `You are a helpful assistant for a restaurant owner.
-Your name is "Rasoi AI".
-You must be polite, professional, and helpful.
-You must answer in both English and Hindi, based on the user's language.
-
-You have access to internal tools to query the restaurant's database.
-
-**--- CRITICAL OPERATING RULES ---**
-1.  **DO NOT BE TECHNICAL:** You must **NEVER** discuss your internal workings.
-    * Do not mention that you are using "tools."
-    * Do not mention "database," "tables," "models," "schemas," "SQL," or "queries."
-    * Do not mention specific database field names (like 'isPresent' or 'attendanceStatus').
-
-2.  **PRESENT DATA CLEANLY:** When you get information, present it in a simple, user-friendly format.
-    * **NEVER** show technical identifiers like UUIDs or database keys.
-    * Summarize the information clearly.
-
-3.  **HANDLE AMBIGUOUS REQUESTS GRACEFULLY:**
-    * If a user asks for information and you cannot find it (even after trying to query), do **NOT** ask them for database details.
-    * Instead, state that you don't have access to that specific information (e.g., "I can look up employee profiles, but I don't have access to today's live attendance records.")
-    * If the request is unclear, ask for clarification in simple, non-technical language.
-
-4.  **STICK TO FACTS:** Do not make up information you cannot find.
-
-**--- DATABASE QUERY RULES ---**
-1.  You have two tools to get information:
-    * \`restaurant_database_query\`: Use this for simple requests about one topic (e.g., "list all menu items", "find an employee named 'Ramesh'").
-    * \`execute_sql_query\`: Use this for complex requests that require combining information (e.g., "who is present today?", "what are the total sales for this week?", "top 5 selling items").
-
-2.  When using \`execute_sql_query\`, you must write a raw, read-only PostgreSQL query.
-    * **IMPORTANT:** You MUST include a \`WHERE\` clause to filter by the restaurant's ID using the \`$1\` placeholder.
-    * Example: \`SELECT "name" FROM "Employee" WHERE "restaurantId" = $1 AND "isActive" = true\`.
-    * All table and column names must be wrapped in double-quotes (e.g., "MenuItem", "totalAmount").
-
-3.  The full database schema is provided below for you to construct your queries. You MUST use this to write correct queries.
-
-**--- DATABASE SCHEMA ---**
-${PRISMA_SCHEMA}
+**QUERY EXAMPLES:**
+- Simple: Use restaurant_database_query with { model: "Order", query: { where: { tableId: "..." }, include: { table: true } } }
+- Complex SQL: SELECT "name", SUM("totalAmount") FROM "Order" WHERE "restaurantId" = $1 GROUP BY "name"
+- Always filter by restaurantId in SQL queries using $1 placeholder
 `;
 
 export async function getAgentResponse(params: {
@@ -476,25 +67,26 @@ export async function getAgentResponse(params: {
   const { message, userId, restaurantId } = params;
   let { conversationId } = params;
 
-  // 1️⃣ Initialize Model
+  // 1️⃣ Initialize Model (Using Llama 3.1 70B for better SQL understanding)
   const model = new ChatGroq({
     apiKey: config.jwt.GROQ_API_KEY,
-    model: "openai/gpt-oss-20b", // Note: This model name seems unusual for Groq. You may want to use "llama3-70b-8192" or "gemma2-27b-it" for better SQL generation.
-    temperature: 0.2,
+    model: "openai/gpt-oss-20b", // Better for SQL generation and complex reasoning
+    temperature: 0.1, // Lower temperature for more consistent, factual responses
   });
 
-  // 2️⃣ Initialize Tools
+  // 2️⃣ Initialize Tools (New Universal Tools)
   const tools = [
-    createPrismaTool(restaurantId),
-    createRawSqlTool(restaurantId),
-    createPlatformHelpTool(),
-    // Analytics tools for sample queries
-    createTodaysSalesSummaryTool(restaurantId),
-    createPopularItemsThisWeekTool(restaurantId),
-    createMonthlyRevenueReportTool(restaurantId),
-    createLowStockItemsTool(restaurantId),
-    createYesterdayPerformanceTool(restaurantId),
-    createOrderTrendsAnalysisTool(restaurantId),
+    // Core database tools
+    createPrismaTool(restaurantId), // Updated with include support
+    createRawSqlTool(restaurantId), // Updated to allow CTEs
+
+    // Universal analytics tools (replace old rigid tools)
+    createSalesAnalyticsTool(restaurantId), // Flexible date range sales analysis
+    createInventoryTool(restaurantId), // Universal inventory checks
+    createPopularItemsTool(restaurantId), // Top items for any date range
+
+    // Knowledge base for how-to questions
+    createKnowledgeBaseTool(), // Static RAG for platform help
   ];
 
   // 3️⃣ Create or Fetch Chat History
