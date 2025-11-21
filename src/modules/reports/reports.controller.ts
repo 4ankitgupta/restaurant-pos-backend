@@ -47,3 +47,23 @@ export const getOrderCancellationReport = handleReportRequest(
 export const getPaymentSummaryReport = handleReportRequest(
   reportService.generatePaymentSummaryReport
 );
+
+// ===== NEW REPORTS =====
+export const getInventoryVarianceReport = handleReportRequest(
+  reportService.generateInventoryVarianceReport
+);
+export const getMenuItemProfitabilityReport = handleReportRequest(
+  reportService.generateMenuItemProfitabilityReport
+);
+export const getSalesByHourReport = handleReportRequest(
+  reportService.generateSalesByHourReport
+);
+export const getTaxComplianceReport = handleReportRequest(
+  reportService.generateTaxComplianceReport
+);
+export const getSalesByEmployeeReport = handleReportRequest(
+  reportService.generateSalesByEmployeeReport
+);
+export const getDiscountAnalysisReport = handleReportRequest(
+  reportService.generateDiscountAnalysisReport
+);

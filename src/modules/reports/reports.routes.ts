@@ -89,4 +89,66 @@ router.get(
   reportController.getStockConsumptionReport
 );
 
+// ===== NEW REPORTS =====
+
+// Inventory Variance / Wastage Report
+router.get(
+  "/inventory-variance",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getInventoryVarianceReport
+);
+
+// Costing & Profitability Report
+router.get(
+  "/menu-item-profitability",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
+  validate(reportValidation.salesReportSchema),
+  reportController.getMenuItemProfitabilityReport
+);
+
+// Sales by Hour / Heatmap Report
+router.get(
+  "/sales-by-hour",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getSalesByHourReport
+);
+
+// Tax Compliance Report (GST/VAT)
+router.get(
+  "/tax-compliance",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getTaxComplianceReport
+);
+
+// Sales by Employee Report (Staff Performance)
+router.get(
+  "/sales-by-employee",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
+  validate(reportValidation.salesReportSchema),
+  reportController.getSalesByEmployeeReport
+);
+
+// Discount & Promotion Analysis Report
+router.get(
+  "/discount-analysis",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getDiscountAnalysisReport
+);
+
 export default router;
