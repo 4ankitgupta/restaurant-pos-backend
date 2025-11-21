@@ -3,6 +3,7 @@ import {
   authenticateJWT,
   authorizeRoles,
 } from "../../middlewares/auth.middleware.js";
+import { requireFeature } from "../../middlewares/feature.middleware.js";
 import * as reportController from "./reports.controller.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import * as reportValidation from "./reports.validation.js";
@@ -16,6 +17,7 @@ router.get(
   "/sales-summary",
   authenticateJWT,
   authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
   validate(reportValidation.salesReportSchema),
   reportController.getSalesSummaryReport
 );
@@ -24,6 +26,7 @@ router.get(
   "/item-wise-sales",
   authenticateJWT,
   authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
   validate(reportValidation.salesReportSchema),
   reportController.getItemWiseSalesReport
 );
@@ -32,6 +35,7 @@ router.get(
   "/category-sales",
   authenticateJWT,
   authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
   validate(reportValidation.dateRangeSchema),
   reportController.getCategorySalesReport
 );
@@ -41,6 +45,7 @@ router.get(
   "/stock-level",
   authenticateJWT,
   authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
   reportController.getStockLevelReport
 );
 
@@ -49,6 +54,7 @@ router.get(
   "/daily-closing",
   authenticateJWT,
   authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
   validate(reportValidation.singleDateSchema),
   reportController.getDailyClosingReport
 );
@@ -57,6 +63,7 @@ router.get(
   "/order-cancellation",
   authenticateJWT,
   authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
   validate(reportValidation.dateRangeSchema),
   reportController.getOrderCancellationReport
 );
@@ -65,6 +72,7 @@ router.get(
   "/payment-summary",
   authenticateJWT,
   authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
   validate(reportValidation.dateRangeSchema),
   reportController.getPaymentSummaryReport
 );
@@ -76,6 +84,7 @@ router.get(
   "/stock-consumption",
   authenticateJWT,
   authorizeRoles("ADMIN"),
+  requireFeature("reports"),
   validate(reportValidation.dateRangeSchema),
   reportController.getStockConsumptionReport
 );

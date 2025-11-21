@@ -3,6 +3,7 @@ import {
   authenticateJWT,
   authorizeRoles,
 } from "../../middlewares/auth.middleware.js";
+import { requireFeature } from "../../middlewares/feature.middleware.js";
 import { UserRole } from "@prisma/client";
 import { validate } from "../../middlewares/validate.middleware.js";
 import {
@@ -20,7 +21,11 @@ import {
 const router = Router();
 
 // All supplier routes are protected for Admins and Managers
-router.use(authenticateJWT, authorizeRoles(UserRole.ADMIN, UserRole.MANAGER));
+router.use(
+  authenticateJWT,
+  authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
+  requireFeature("inventory_management")
+);
 
 router
   .route("/")

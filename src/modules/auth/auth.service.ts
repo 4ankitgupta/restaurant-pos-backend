@@ -58,7 +58,18 @@ export const registerUser = async (userData: any) => {
 export const loginUser = async (credentials: any) => {
   const { email, password } = credentials;
 
-  const user = await prisma.user.findUnique({ where: { email } });
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          featureFlags: true,
+        },
+      },
+    },
+  });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid email or password");
   }
@@ -80,6 +91,7 @@ export const loginUser = async (credentials: any) => {
       email: user.email,
       role: user.role,
       restaurantId: user.restaurantId,
+      restaurant: user.restaurant,
     },
     tokens,
   };

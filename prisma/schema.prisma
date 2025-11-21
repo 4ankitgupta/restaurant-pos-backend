@@ -29,6 +29,7 @@ model Restaurant {
   phone           String?
   address         String?
   isActive        Boolean           @default(true)
+  featureFlags    Json?             @default("{}") // Stores flags like { "ai_chat": true, "inventory": false }
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   subscription    Subscription?
