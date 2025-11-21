@@ -47,6 +47,8 @@ model Restaurant {
   purchaseItems   PurchaseItem[]
   suppliers       Supplier[]
   expenses        Expense[]
+  expenseCategories ExpenseCategory[]
+  recurringExpenses RecurringExpense[]
   stockLogs       StockLog[]
   conversations   Conversation[]
 
@@ -217,6 +219,20 @@ enum TransactionStatus {
   PENDING
 }
 
+enum ExpenseStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum RecurrenceInterval {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
 model Payment {
   id             String            @id @default(uuid())
   amount         Decimal
@@ -310,14 +326,69 @@ model StockLog {
   createdAt       DateTime        @default(now())
 }
 
-model Expense {
+// Expense Category Model (e.g., Utilities, Rent, Salary, Maintenance)
+model ExpenseCategory {
   id           String     @id @default(uuid())
-  description  String
-  amount       Decimal
-  expenseDate  DateTime
-  createdAt    DateTime   @default(now())
+  name         String
+  description  String?
+  color        String?    // Hex code for charts (e.g., "#FF0000")
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   restaurantId String
+  expenses     Expense[]
+  recurringRules RecurringExpense[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([restaurantId, name])
+}
+
+// Recurring Expense Rules (The Automation Engine)
+model RecurringExpense {
+  id              String             @id @default(uuid())
+  name            String             // e.g., "Monthly Shop Rent"
+  amount          Decimal
+  interval        RecurrenceInterval
+  startDate       DateTime
+  nextRunDate     DateTime           // The system checks this to generate the next bill
+  isActive        Boolean            @default(true)
+  autoGenerate    Boolean            @default(true) // If true, system auto-creates the Expense entry
+  
+  category        ExpenseCategory?   @relation(fields: [categoryId], references: [id])
+  categoryId      String?
+
+  restaurant      Restaurant         @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId    String
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+}
+
+// Updated Expense Model
+model Expense {
+  id              String          @id @default(uuid())
+  description     String          // e.g., "January Electricity Bill"
+  amount          Decimal
+  expenseDate     DateTime        @default(now())
+  status          ExpenseStatus   @default(PAID)
+  
+  // Payment Details
+  paymentMethod   PaymentMethod?  // Reusing existing enum
+  paidBy          String?         // Name of employee/admin who authorized it
+  referenceNo     String?         // Invoice number or Transaction ID
+  attachmentUrl   String?         // Link to uploaded receipt image
+  
+  // Classification
+  category        ExpenseCategory? @relation(fields: [categoryId], references: [id])
+  categoryId      String?
+
+  // Recurrence Link (to track if this came from a recurring rule)
+  isRecurring     Boolean         @default(false)
+  
+  restaurant      Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId    String
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 }
 
 // Super admin model for the platform admin backend

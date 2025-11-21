@@ -151,4 +151,14 @@ router.get(
   reportController.getDiscountAnalysisReport
 );
 
+// Profit & Loss Report (includes Operational Expenses)
+router.get(
+  "/profit-and-loss",
+  authenticateJWT,
+  authorizeRoles("MANAGER", "ADMIN"),
+  requireFeature("reports"),
+  validate(reportValidation.dateRangeSchema),
+  reportController.getProfitAndLossReport
+);
+
 export default router;

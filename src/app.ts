@@ -36,6 +36,7 @@ import agentRoutes from "./modules/agent/agent.routes.js";
 import employeeRoutes from "./modules/employee/employee.routes.js";
 import attendanceRoutes from "./modules/attendance/attendance.routes.js";
 import zomatoRoutes from "./modules/zomato/zomato.routes.js";
+import expenseRoutes from "./modules/expense/expense.routes.js";
 
 const app: Application = express();
 
@@ -71,6 +72,7 @@ apiRouter.use("/reports", reportRoutes);
 apiRouter.use("/agent", agentRoutes);
 apiRouter.use("/employees", employeeRoutes);
 apiRouter.use("/attendance", attendanceRoutes);
+apiRouter.use("/expenses", expenseRoutes);
 // Public routes for third-party integrations
 apiRouter.use("/public/zomato", zomatoRoutes);
 

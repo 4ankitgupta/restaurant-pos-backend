@@ -67,3 +67,6 @@ export const getSalesByEmployeeReport = handleReportRequest(
 export const getDiscountAnalysisReport = handleReportRequest(
   reportService.generateDiscountAnalysisReport
 );
+export const getProfitAndLossReport = handleReportRequest(
+  reportService.generateProfitAndLossReport
+);

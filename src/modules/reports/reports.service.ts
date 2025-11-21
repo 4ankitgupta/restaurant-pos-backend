@@ -852,3 +852,143 @@ export const generateDiscountAnalysisReport = async (
 
   return discountData;
 };
+
+// ===== Profit & Loss Report with Operational Expenses =====
+export const generateProfitAndLossReport = async (
+  restaurantId: string,
+  query: any
+) => {
+  const { startDate, endDate } = query;
+  const dateFilters: any = {};
+
+  if (startDate || endDate) {
+    dateFilters.createdAt = {
+      gte: startDate ? startOfDay(parseISO(startDate)) : undefined,
+      lte: endDate ? endOfDay(parseISO(endDate)) : undefined,
+    };
+    // Clean up undefined filters
+    if (!dateFilters.createdAt.gte) delete dateFilters.createdAt.gte;
+    if (!dateFilters.createdAt.lte) delete dateFilters.createdAt.lte;
+    if (Object.keys(dateFilters.createdAt).length === 0)
+      delete dateFilters.createdAt;
+  }
+
+  // 1. Calculate Total Revenue (Income from orders)
+  const paidOrders = await prisma.order.findMany({
+    where: {
+      restaurantId,
+      paymentStatus: PaymentStatus.PAID,
+      ...dateFilters,
+    },
+  });
+
+  const totalRevenue = paidOrders.reduce(
+    (sum, order) => sum + order.totalAmount.toNumber(),
+    0
+  );
+
+  // 2. Calculate COGS (Cost of Goods Sold) from inventory purchases
+  const purchaseFilters: any = { restaurantId };
+  if (startDate || endDate) {
+    purchaseFilters.purchaseDate = {
+      gte: startDate ? startOfDay(parseISO(startDate)) : undefined,
+      lte: endDate ? endOfDay(parseISO(endDate)) : undefined,
+    };
+    if (!purchaseFilters.purchaseDate.gte)
+      delete purchaseFilters.purchaseDate.gte;
+    if (!purchaseFilters.purchaseDate.lte)
+      delete purchaseFilters.purchaseDate.lte;
+    if (Object.keys(purchaseFilters.purchaseDate).length === 0)
+      delete purchaseFilters.purchaseDate;
+  }
+
+  const purchaseOrders = await prisma.purchaseOrder.findMany({
+    where: purchaseFilters,
+  });
+
+  const totalCOGS = purchaseOrders.reduce((sum, po) => sum + po.totalAmount, 0);
+
+  // 3. Calculate Operational Expenses (OpEx)
+  const expenseFilters: any = { restaurantId };
+  if (startDate || endDate) {
+    expenseFilters.expenseDate = {
+      gte: startDate ? startOfDay(parseISO(startDate)) : undefined,
+      lte: endDate ? endOfDay(parseISO(endDate)) : undefined,
+    };
+    if (!expenseFilters.expenseDate.gte) delete expenseFilters.expenseDate.gte;
+    if (!expenseFilters.expenseDate.lte) delete expenseFilters.expenseDate.lte;
+    if (Object.keys(expenseFilters.expenseDate).length === 0)
+      delete expenseFilters.expenseDate;
+  }
+
+  const expenses = await prisma.expense.findMany({
+    where: expenseFilters,
+    include: {
+      category: true,
+    },
+  });
+
+  const totalOpEx = expenses.reduce(
+    (sum, expense) => sum + expense.amount.toNumber(),
+    0
+  );
+
+  // Group expenses by category for detailed breakdown
+  const expensesByCategory = expenses.reduce((acc: any, expense) => {
+    const categoryName = expense.category?.name || "Uncategorized";
+    if (!acc[categoryName]) {
+      acc[categoryName] = {
+        categoryName,
+        categoryColor: expense.category?.color || "#6B7280",
+        totalAmount: 0,
+        count: 0,
+      };
+    }
+    acc[categoryName].totalAmount += expense.amount.toNumber();
+    acc[categoryName].count += 1;
+    return acc;
+  }, {});
+
+  // 4. Calculate Gross Profit and Net Profit
+  const grossProfit = totalRevenue - totalCOGS;
+  const netProfit = grossProfit - totalOpEx;
+
+  // 5. Calculate profit margins
+  const grossProfitMargin =
+    totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
+  const netProfitMargin =
+    totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
+  return {
+    reportMeta: {
+      startDate,
+      endDate,
+      generatedAt: new Date(),
+      restaurantId,
+    },
+    summary: {
+      totalRevenue,
+      totalCOGS,
+      totalOpEx,
+      grossProfit,
+      netProfit,
+      grossProfitMargin: Math.round(grossProfitMargin * 100) / 100,
+      netProfitMargin: Math.round(netProfitMargin * 100) / 100,
+    },
+    breakdown: {
+      revenue: {
+        totalOrders: paidOrders.length,
+        totalAmount: totalRevenue,
+      },
+      cogs: {
+        totalPurchaseOrders: purchaseOrders.length,
+        totalAmount: totalCOGS,
+      },
+      operationalExpenses: {
+        totalExpenses: expenses.length,
+        totalAmount: totalOpEx,
+        byCategory: Object.values(expensesByCategory),
+      },
+    },
+  };
+};
