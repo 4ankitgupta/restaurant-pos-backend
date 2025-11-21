@@ -30,6 +30,7 @@ model Restaurant {
   address         String?
   isActive        Boolean           @default(true)
   featureFlags    Json?             @default("{}") // Stores flags like { "ai_chat": true, "inventory": false }
+  zomatoIntegrationEnabled Boolean  @default(false) // Feature flag for Zomato integration
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   subscription    Subscription?
@@ -52,6 +53,9 @@ model Restaurant {
   // --- Attendance & Employees ---
   employees         Employee[]
   attendancePunches AttendancePunch[]
+  
+  // --- Zomato Integration ---
+  zomatoIntegration ZomatoIntegration?
 }
 
 model User {
@@ -135,6 +139,14 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum OrderType {
+  DINE_IN
+  TAKE_AWAY
+  DELIVERY_ZOMATO
+  DELIVERY_SWIGGY
+  DELIVERY_OTHER
+}
+
 enum OrderItemStatus {
   ORDERED
   PREPARING
@@ -155,6 +167,11 @@ model Order {
   status        OrderStatus   @default(PENDING)
   totalAmount   Decimal       @default(0.0)
   paymentStatus PaymentStatus @default(UNPAID)
+  orderType     OrderType     @default(DINE_IN)
+  sourceId      String?       // External order ID (e.g., Zomato order ID)
+  customerName  String?       // For delivery orders
+  customerPhone String?       // For delivery orders
+  deliveryAddress String?     // For delivery orders
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
   takeAway      Boolean       @default(false)
@@ -166,6 +183,9 @@ model Order {
   userId        String?
   orderItems    OrderItem[]
   payments      Payment[]
+  
+  @@index([orderType])
+  @@index([restaurantId, sourceId]) // For querying external orders
 }
 
 model OrderItem {
@@ -427,4 +447,19 @@ model AttendancePunch {
   restaurantId String
 
   @@index([employeeId, timestamp])
+}
+
+// --- NEW: Zomato Integration ---
+model ZomatoIntegration {
+  id                    String     @id @default(uuid())
+  restaurant            Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId          String     @unique // One-to-one relationship
+  apiKeyEncrypted       String     // Encrypted Zomato Partner API Key
+  zomatoRestaurantId    String     // The unique Zomato ID for the restaurant
+  webhookSecretEncrypted String?   // Encrypted secret for webhook verification
+  isConfigured          Boolean    @default(false) // Flag to indicate if setup is complete
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  @@index([zomatoRestaurantId])
 }

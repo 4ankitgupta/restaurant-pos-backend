@@ -253,3 +253,118 @@ export const getAllOrders = async (restaurantId: string) => {
   // Correct totals for all orders
   return orders.map(correctOrderTotal);
 };
+
+/**
+ * Ingests an order payload coming from Zomato and creates a POS order.
+ * This implementation is intentionally conservative: it prevents duplicates
+ * by checking `sourceId`, creates a basic delivery order and attempts to
+ * map items by variant name. Improve mapping logic as you add a proper
+ * cross-reference table between Zomato menu IDs and POS variant IDs.
+ */
+export const zomatoOrderToPos = async (payload: any, restaurantId: string) => {
+  // payload shape will vary. Try to extract an external order id
+  const externalId =
+    payload.order_id ||
+    payload.orderId ||
+    payload.id ||
+    payload.data?.order?.id;
+
+  if (!externalId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Missing external order id in Zomato payload"
+    );
+  }
+
+  // Prevent duplicate processing
+  const existing = await prisma.order.findFirst({
+    where: { restaurantId, sourceId: String(externalId) },
+  });
+  if (existing) {
+    return existing;
+  }
+
+  // Basic customer info
+  const customerName =
+    payload.customer?.name ||
+    payload.customer_name ||
+    payload.delivery?.name ||
+    null;
+  const customerPhone =
+    payload.customer?.phone ||
+    payload.customer_phone ||
+    payload.delivery?.phone ||
+    null;
+  const deliveryAddress = payload.delivery?.address || payload.address || null;
+
+  // Try to map items. If mapping fails, create order without items and include a note.
+  const items =
+    payload.items || payload.order_items || payload.data?.order?.items || [];
+
+  // Create the order first with totalAmount 0 (we'll update after items)
+  const created = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.create({
+      data: {
+        restaurantId,
+        status: OrderStatus.PENDING,
+        orderType: "DELIVERY_ZOMATO" as any,
+        sourceId: String(externalId),
+        customerName: customerName ?? undefined,
+        customerPhone: customerPhone ?? undefined,
+        deliveryAddress: deliveryAddress ?? undefined,
+        totalAmount: 0,
+      },
+    });
+
+    let total = 0;
+
+    for (const it of items) {
+      // Payload item name and quantity heuristics
+      const name = it.name || it.item_name || it.title;
+      const qty = Number(it.quantity || it.qty || it.count || 1);
+      const priceFromPayload = Number(
+        it.price || it.unit_price || it.rate || 0
+      );
+
+      // Try to find menuItemVariant by name within restaurant
+      let variant = null;
+      if (name) {
+        variant = await tx.menuItemVariant.findFirst({
+          where: { restaurantId, name },
+        });
+      }
+
+      const price = variant
+        ? Number((variant.price as any).toString())
+        : priceFromPayload;
+      const itemTotal = price * qty;
+      total += itemTotal;
+
+      await tx.orderItem.create({
+        data: {
+          orderId: order.id,
+          restaurantId,
+          menuItemVariantId: variant ? variant.id : undefined,
+          quantity: qty,
+          price: price as any,
+          status: OrderItemStatus.ORDERED,
+          note: variant ? null : `Unmapped item from Zomato: ${name}`,
+        } as any,
+      });
+    }
+
+    const updated = await tx.order.update({
+      where: { id: order.id },
+      data: { totalAmount: total },
+    });
+    return updated;
+  });
+
+  // Notify via websocket
+  broadcastToRestaurant(restaurantId, {
+    type: "NEW_ORDER_ZOMATO",
+    payload: created,
+  });
+
+  return created;
+};
