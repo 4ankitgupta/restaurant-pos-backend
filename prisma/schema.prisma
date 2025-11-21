@@ -157,6 +157,11 @@ enum OrderItemStatus {
   CANCELLED
 }
 
+enum OrderItemPaymentStatus {
+  UNPAID
+  PAID
+}
+
 enum PaymentStatus {
   UNPAID
   PAID
@@ -191,18 +196,19 @@ model Order {
 }
 
 model OrderItem {
-  id           String          @id @default(uuid())
-  quantity     Int
-  price        Decimal
-  status       OrderItemStatus @default(ORDERED)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  note         String? 
-  restaurant   Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-  order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId      String
-  menuItemVariant   MenuItemVariant? @relation(fields: [menuItemVariantId], references: [id], onDelete: SetNull)
+  id            String                  @id @default(uuid())
+  quantity      Int
+  price         Decimal
+  status        OrderItemStatus         @default(ORDERED)
+  paymentStatus OrderItemPaymentStatus  @default(UNPAID)
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  note          String? 
+  restaurant    Restaurant              @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId  String
+  order         Order                   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId       String
+  menuItemVariant   MenuItemVariant?    @relation(fields: [menuItemVariantId], references: [id], onDelete: SetNull)
   menuItemVariantId String?
 }
 
@@ -235,10 +241,13 @@ enum RecurrenceInterval {
 
 model Payment {
   id             String            @id @default(uuid())
-  amount         Decimal
+  amount         Decimal           // The actual bill amount covered
+  tenderedAmount Decimal?          // Amount cash given by customer
+  changeAmount   Decimal?          // Change returned to customer
   paymentMethod  PaymentMethod
   status         TransactionStatus @default(SUCCESS)
   transactionId  String?
+  coveredItems   Json?             // Array of OrderItem IDs covered by this payment
   createdAt      DateTime          @default(now())
   restaurant     Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   restaurantId   String

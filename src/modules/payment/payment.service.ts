@@ -10,7 +10,8 @@ import {
 import { broadcastToRestaurant } from "../../websocketServer.js";
 
 export const createPayment = async (paymentData: any, restaurantId: string) => {
-  const { orderId, amount, paymentMethod } = paymentData;
+  const { orderId, amount, paymentMethod, tenderedAmount, orderItemIds } =
+    paymentData;
 
   // Fetch order with tableId for table status update
   const order = await prisma.order.findFirst({
@@ -22,15 +23,50 @@ export const createPayment = async (paymentData: any, restaurantId: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Order not found.");
   }
 
+  // Calculate change for cash payments
+  let changeAmount = 0;
+  if (paymentMethod === "CASH" && tenderedAmount) {
+    const tendered = Number(tenderedAmount);
+    const paymentAmount = Number(amount);
+
+    if (tendered < paymentAmount) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Tendered amount is less than payment amount"
+      );
+    }
+
+    changeAmount = tendered - paymentAmount;
+  }
+
+  // Create payment record
   const payment = await prisma.payment.create({
     data: {
       orderId,
       restaurantId,
       amount,
       paymentMethod,
+      tenderedAmount: tenderedAmount || amount,
+      changeAmount: changeAmount > 0 ? changeAmount : 0,
+      coveredItems: orderItemIds ? JSON.stringify(orderItemIds) : null,
     },
   });
 
+  // Handle "Split by Item" Logic - mark items as PAID
+  if (orderItemIds && orderItemIds.length > 0) {
+    await prisma.orderItem.updateMany({
+      where: {
+        id: { in: orderItemIds },
+        restaurantId,
+        orderId,
+      },
+      data: {
+        paymentStatus: "PAID",
+      },
+    });
+  }
+
+  // Calculate total paid amount
   const totalPaid =
     (
       await prisma.payment.aggregate({
@@ -51,6 +87,9 @@ export const createPayment = async (paymentData: any, restaurantId: string) => {
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: { paymentStatus, ...(orderStatus && { status: orderStatus }) },
+    include: {
+      orderItems: true,
+    },
   });
 
   broadcastToRestaurant(restaurantId, {
