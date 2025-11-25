@@ -2,13 +2,28 @@ import prisma from "../../db/index.js";
 import { TwilioProvider } from "./providers/TwilioProvider.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { decrypt } from "../../utils/cryptoService.js";
+import { randomUUID } from "crypto";
+
+interface TwilioConfig {
+  accountSid: string;
+  authToken: string;
+  fromNumber: string;
+}
 
 export class WhatsAppService {
+  /**
+   * Send bill via WhatsApp
+   * @param restaurantId - Restaurant ID
+   * @param orderId - Order ID
+   * @param customerPhone - Customer's WhatsApp number (must include country code like +91xxxxxxxxxx)
+   * @param origin - Base URL of the application (e.g., https://app.rasoitrack.com)
+   * @returns Result with success status and remaining credits
+   */
   async sendBill(
     restaurantId: string,
     orderId: string,
     customerPhone: string,
-    billLink: string
+    origin: string
   ) {
     // 1. Fetch Configuration
     const meta = await prisma.restaurantMetaData.findUnique({
@@ -22,9 +37,25 @@ export class WhatsAppService {
       );
     }
 
+    // 2. Generate Secure Token and Set Expiry (7 days)
+    const billAccessToken = randomUUID();
+    const billTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    // 3. Update Order with Token and Expiry
+    await prisma.order.update({
+      where: { id: orderId, restaurantId },
+      data: {
+        billAccessToken,
+        billTokenExpiresAt,
+      },
+    });
+
+    // 4. Construct Public Bill Link
+    const billLink = `${origin}/public/bill/${billAccessToken}`;
+
     let provider;
 
-    // 2. Determine Strategy (Platform vs Custom)
+    // 5. Determine Strategy (Platform vs Custom)
     if (meta.whatsappProvider === "PLATFORM") {
       // A. Check Credits
       if (meta.messageCredits <= 0) {
@@ -54,7 +85,7 @@ export class WhatsAppService {
       });
     } else {
       // C. Use Custom Credentials (with decryption)
-      const config = meta.providerConfig as any;
+      const config = meta.providerConfig as TwilioConfig | null;
       if (!config?.accountSid || !config?.authToken) {
         throw new ApiError(
           500,
@@ -77,11 +108,11 @@ export class WhatsAppService {
       });
     }
 
-    // 3. Send Message
-    const message = `Namaste! Thank you for dining at Rasoi Track. Click here to view your bill: ${billLink}`;
+    // 6. Send Message
+    const message = `Namaste! Thank you for dining with us. Click here to view your bill: ${billLink}`;
     await provider.sendMessage(customerPhone, message);
 
-    // 4. Post-Send Logic (Decrement Credits)
+    // 7. Post-Send Logic (Decrement Credits)
     await prisma.$transaction(async (tx) => {
       // Update Order
       await tx.order.update({

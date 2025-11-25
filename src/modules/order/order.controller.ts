@@ -96,6 +96,14 @@ export const sendWhatsAppBill = asyncHandler(
       throw new ApiError(httpStatus.BAD_REQUEST, "Phone number is required");
     }
 
+    // Validate phone number format (must start with +)
+    if (!customerPhone.startsWith("+")) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Phone number must include country code (e.g., +91xxxxxxxxxx)"
+      );
+    }
+
     // 2. Verify order belongs to restaurant
     const existingOrder = await prisma.order.findFirst({
       where: { id: orderId, restaurantId },
@@ -105,29 +113,28 @@ export const sendWhatsAppBill = asyncHandler(
       throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
     }
 
-    // 3. Update Customer Details on Order
-    const order = await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        customerName,
-        customerPhone,
-        // Generate Token if not exists
-        billAccessToken: randomUUID(),
-        billTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 Days
-      },
-    });
+    // 3. Update Customer Details on Order (optional fields)
+    if (customerName) {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          customerName,
+          customerPhone,
+        },
+      });
+    }
 
-    // 4. Construct Public Link
-    // The frontend will route this to a page that fetches the PDF
-    const publicLink = `${process.env.FRONTEND_URL}/view-bill/${order.billAccessToken}`;
+    // 4. Get Origin URL (base URL of the application)
+    const origin =
+      process.env.FRONTEND_URL || `${req.protocol}://${req.get("host")}`;
 
-    // 5. Call Service
+    // 5. Call Service (token generation happens inside the service)
     const whatsappService = new WhatsAppService();
     const result = await whatsappService.sendBill(
       restaurantId,
       orderId,
       customerPhone,
-      publicLink
+      origin
     );
 
     res

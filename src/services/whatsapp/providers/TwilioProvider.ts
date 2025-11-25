@@ -12,17 +12,29 @@ export class TwilioProvider implements IWhatsAppProvider {
 
   async sendMessage(to: string, content: string): Promise<boolean> {
     try {
-      // Ensure number has country code, e.g., +91
-      const formattedTo = to.startsWith("+") ? to : `+91${to}`;
+      // Validate that number starts with + (country code required)
+      if (!to.startsWith("+")) {
+        throw new Error(
+          "Phone number must include country code (e.g., +91xxxxxxxxxx, +1xxxxxxxxxx)"
+        );
+      }
+
+      // Validate minimum length (country code + number)
+      if (to.length < 10) {
+        throw new Error("Invalid phone number format");
+      }
 
       await this.client.messages.create({
         body: content,
         from: `whatsapp:${this.from}`,
-        to: `whatsapp:${formattedTo}`,
+        to: `whatsapp:${to}`,
       });
       return true;
     } catch (error) {
       console.error("Twilio Send Error:", error);
+      if (error instanceof Error) {
+        throw new Error(`Failed to send WhatsApp message: ${error.message}`);
+      }
       throw new Error("Failed to send WhatsApp message via Twilio");
     }
   }
