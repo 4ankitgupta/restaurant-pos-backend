@@ -38,6 +38,7 @@ export const getActiveAndUnpaidOrders = async (restaurantId: string) => {
         },
       },
       table: true,
+      restaurant: true,
     },
     orderBy: {
       createdAt: "asc",
@@ -71,6 +72,7 @@ export const getCompletedOrders = async (restaurantId: string) => {
         },
       },
       table: true,
+      restaurant: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -182,6 +184,7 @@ export const addItemsToOrder = async (
           },
         },
         table: true,
+        restaurant: true,
       },
     });
 
@@ -272,6 +275,7 @@ export const createTakeawayOrder = async (
           },
         },
         table: true,
+        restaurant: true,
       },
     });
 

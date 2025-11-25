@@ -47,6 +47,7 @@ export const getActiveOrders = async (restaurantId: string) => {
     },
     include: {
       table: true,
+      restaurant: true,
       orderItems: {
         // Include all order items regardless of status
         include: {
@@ -120,6 +121,7 @@ export const getActiveOrderByTable = async (
         },
       },
       table: true,
+      restaurant: true,
     },
   });
 
@@ -212,6 +214,7 @@ export const addItemsToOrder = async (
           },
         },
         table: true,
+        restaurant: true,
       },
     });
 
@@ -245,6 +248,7 @@ export const getAllOrders = async (restaurantId: string) => {
         },
       },
       table: true,
+      restaurant: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -357,6 +361,17 @@ export const zomatoOrderToPos = async (payload: any, restaurantId: string) => {
     const updated = await tx.order.update({
       where: { id: order.id },
       data: { totalAmount: total },
+      include: {
+        orderItems: {
+          include: {
+            menuItemVariant: {
+              include: { menuItem: true },
+            },
+          },
+        },
+        table: true,
+        restaurant: true,
+      },
     });
     return updated;
   });

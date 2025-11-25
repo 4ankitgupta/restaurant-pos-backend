@@ -100,6 +100,7 @@ export const createOrder = async (
           },
         },
         table: true,
+        restaurant: true,
       },
     });
 
@@ -219,6 +220,7 @@ export const addItemsToOrder = async (
           },
         },
         table: true,
+        restaurant: true,
       },
     });
 
@@ -272,6 +274,7 @@ export const updateOrderItemStatus = async (
               },
             },
             table: true,
+            restaurant: true,
           },
         },
       },
@@ -306,7 +309,7 @@ export const updateOrderItemStatus = async (
 export const completeOrder = async (orderId: string, restaurantId: string) => {
   const order = await prisma.order.findFirst({
     where: { id: orderId, restaurantId },
-    include: { orderItems: true },
+    include: { orderItems: true, restaurant: true },
   });
 
   if (!order) {
@@ -350,6 +353,7 @@ export const completeOrder = async (orderId: string, restaurantId: string) => {
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: { status: newStatus },
+    include: { restaurant: true },
   });
 
   broadcastToRestaurant(restaurantId, {
