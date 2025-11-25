@@ -51,6 +51,15 @@ const morganFormat = process.env.NODE_ENV === "production" ? "combined" : "dev";
 // Pipe morgan output to our winston logger
 app.use(morgan(morganFormat, { stream: morganStream }));
 
+// --- Serve logos folder statically ---
+const logosPath = path.resolve(process.cwd(), "logos");
+if (!fs.existsSync(logosPath)) {
+  fs.mkdirSync(logosPath, { recursive: true });
+  logger.info(`📁 Created logos directory at: ${logosPath}`);
+}
+app.use("/logos", express.static(logosPath));
+logger.info(`🖼️ Serving logos from: ${logosPath}`);
+
 // --- API Routes ---
 const apiRouter = express.Router();
 apiRouter.use("/auth", authRoutes);

@@ -27,6 +27,9 @@ model Restaurant {
   name            String
   email           String?           @unique
   phone           String?
+  phone2          String?           // Secondary Phone Number
+  gstin           String?           // GSTIN Number
+  logoUrl         String?           // URL path to the logo image
   address         String?
   isActive        Boolean           @default(true)
   featureFlags    Json?             @default("{}") // Stores flags like { "ai_chat": true, "inventory": false }

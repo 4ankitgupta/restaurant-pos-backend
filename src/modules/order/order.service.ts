@@ -86,6 +86,7 @@ export const getOrderDetails = async (
         },
       },
       table: true, // Also include table details
+      restaurant: true, // Include restaurant details for bill receipt
     },
   });
   if (!order) {
