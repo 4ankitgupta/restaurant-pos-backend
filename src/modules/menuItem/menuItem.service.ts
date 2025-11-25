@@ -24,18 +24,28 @@ export class MenuItemService {
   }
 
   async createMenuItem(data: any, restaurantId: string) {
-    const { name, description, categoryId, variants } = data;
+    const {
+      name,
+      nameHindi,
+      description,
+      descriptionHindi,
+      categoryId,
+      variants,
+    } = data;
 
     // Use a nested write to create the item and its variants in one transaction
     return prisma.menuItem.create({
       data: {
         name,
+        ...(nameHindi && { nameHindi }),
         description,
+        ...(descriptionHindi && { descriptionHindi }),
         categoryId,
         restaurantId,
         variants: {
           create: variants.map((variant: any) => ({
             name: variant.name,
+            ...(variant.nameHindi && { nameHindi: variant.nameHindi }),
             price: variant.price,
             restaurantId: restaurantId, // Ensure tenancy on the variant
           })),
@@ -48,7 +58,14 @@ export class MenuItemService {
   }
 
   async updateMenuItem(id: string, data: any, restaurantId: string) {
-    const { name, description, categoryId, variants } = data;
+    const {
+      name,
+      nameHindi,
+      description,
+      descriptionHindi,
+      categoryId,
+      variants,
+    } = data;
 
     // Prepare data for the main menu item update
     const menuDataToUpdate: any = {
@@ -56,6 +73,12 @@ export class MenuItemService {
       description,
       categoryId,
     };
+    if (nameHindi !== undefined) {
+      menuDataToUpdate.nameHindi = nameHindi;
+    }
+    if (descriptionHindi !== undefined) {
+      menuDataToUpdate.descriptionHindi = descriptionHindi;
+    }
 
     // If variants are provided, we replace the old ones with the new ones.
     // This is done by deleting all existing variants and creating the new set.
@@ -66,6 +89,7 @@ export class MenuItemService {
         // Create the new list of variants
         create: variants.map((variant: any) => ({
           name: variant.name,
+          ...(variant.nameHindi && { nameHindi: variant.nameHindi }),
           price: variant.price,
           restaurantId: restaurantId, // Ensure tenancy
         })),

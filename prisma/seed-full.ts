@@ -417,6 +417,7 @@ async function main() {
   const starters = await prisma.menuCategory.create({
     data: {
       name: "Starters & Appetizers",
+      nameHindi: "शुरुआत और स्नैक्स",
       description: "Delicious starters to begin your meal",
       restaurantId: restaurant.id,
     },
@@ -425,6 +426,7 @@ async function main() {
   const parathas = await prisma.menuCategory.create({
     data: {
       name: "Special Parathas",
+      nameHindi: "विशेष पराठे",
       description: "Our signature stuffed parathas",
       restaurantId: restaurant.id,
     },
@@ -433,6 +435,7 @@ async function main() {
   const riceBiryani = await prisma.menuCategory.create({
     data: {
       name: "Rice & Biryani",
+      nameHindi: "चावल और बिरयानी",
       description: "Aromatic rice dishes and biryani",
       restaurantId: restaurant.id,
     },
@@ -441,6 +444,7 @@ async function main() {
   const bread = await prisma.menuCategory.create({
     data: {
       name: "Breads",
+      nameHindi: "रोटी और नान",
       description: "Freshly baked Indian breads",
       restaurantId: restaurant.id,
     },
@@ -449,6 +453,7 @@ async function main() {
   const mainCourses = await prisma.menuCategory.create({
     data: {
       name: "Main Courses",
+      nameHindi: "मुख्य व्यंजन",
       description: "Rich and flavorful curries",
       restaurantId: restaurant.id,
     },
@@ -457,6 +462,7 @@ async function main() {
   const beverages = await prisma.menuCategory.create({
     data: {
       name: "Beverages",
+      nameHindi: "पेय पदार्थ",
       description: "Refreshing drinks",
       restaurantId: restaurant.id,
     },
@@ -465,6 +471,7 @@ async function main() {
   const desserts = await prisma.menuCategory.create({
     data: {
       name: "Desserts",
+      nameHindi: "मिठाई",
       description: "Sweet treats to end your meal",
       restaurantId: restaurant.id,
     },
@@ -478,13 +485,25 @@ async function main() {
   const paneerTikka = await prisma.menuItem.create({
     data: {
       name: "Paneer Tikka",
+      nameHindi: "पनीर टिक्का",
       description: "Cottage cheese marinated in spices and grilled",
+      descriptionHindi: "मसालों में मैरीनेट किया हुआ और ग्रिल किया हुआ पनीर",
       categoryId: starters.id,
       restaurantId: restaurant.id,
       variants: {
         create: [
-          { name: "Half", price: 150, restaurantId: restaurant.id },
-          { name: "Full", price: 250, restaurantId: restaurant.id },
+          {
+            name: "Half",
+            nameHindi: "हाफ",
+            price: 150,
+            restaurantId: restaurant.id,
+          },
+          {
+            name: "Full",
+            nameHindi: "फुल",
+            price: 250,
+            restaurantId: restaurant.id,
+          },
         ],
       },
     },
@@ -493,11 +512,18 @@ async function main() {
   const vegSamosa = await prisma.menuItem.create({
     data: {
       name: "Veg Samosa",
+      nameHindi: "वेज समोसा",
       description: "Crispy pastry filled with spiced potatoes",
+      descriptionHindi: "मसालेदार आलू से भरी खस्ता पेस्ट्री",
       categoryId: starters.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "2 Pcs", price: 60, restaurantId: restaurant.id },
+        create: {
+          name: "2 Pcs",
+          nameHindi: "2 पीस",
+          price: 60,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -505,13 +531,25 @@ async function main() {
   const chickenPakora = await prisma.menuItem.create({
     data: {
       name: "Chicken Pakora",
+      nameHindi: "चिकन पकोड़ा",
       description: "Spiced chicken fritters",
+      descriptionHindi: "मसालेदार चिकन के पकोड़े",
       categoryId: starters.id,
       restaurantId: restaurant.id,
       variants: {
         create: [
-          { name: "Half", price: 120, restaurantId: restaurant.id },
-          { name: "Full", price: 200, restaurantId: restaurant.id },
+          {
+            name: "Half",
+            nameHindi: "हाफ",
+            price: 120,
+            restaurantId: restaurant.id,
+          },
+          {
+            name: "Full",
+            nameHindi: "फुल",
+            price: 200,
+            restaurantId: restaurant.id,
+          },
         ],
       },
     },
@@ -521,13 +559,25 @@ async function main() {
   const alooParatha = await prisma.menuItem.create({
     data: {
       name: "Aloo Paratha",
+      nameHindi: "आलू पराठा",
       description: "Potato stuffed flatbread served with curd and pickle",
+      descriptionHindi: "दही और अचार के साथ परोसा जाने वाला आलू भरा पराठा",
       categoryId: parathas.id,
       restaurantId: restaurant.id,
       variants: {
         create: [
-          { name: "Single", price: 80, restaurantId: restaurant.id },
-          { name: "Double", price: 140, restaurantId: restaurant.id },
+          {
+            name: "Single",
+            nameHindi: "सिंगल",
+            price: 80,
+            restaurantId: restaurant.id,
+          },
+          {
+            name: "Double",
+            nameHindi: "डबल",
+            price: 140,
+            restaurantId: restaurant.id,
+          },
         ],
       },
     },
@@ -536,13 +586,25 @@ async function main() {
   const paneerParatha = await prisma.menuItem.create({
     data: {
       name: "Paneer Paratha",
+      nameHindi: "पनीर पराठा",
       description: "Cottage cheese stuffed flatbread",
+      descriptionHindi: "पनीर से भरा हुआ पराठा",
       categoryId: parathas.id,
       restaurantId: restaurant.id,
       variants: {
         create: [
-          { name: "Single", price: 100, restaurantId: restaurant.id },
-          { name: "Double", price: 180, restaurantId: restaurant.id },
+          {
+            name: "Single",
+            nameHindi: "सिंगल",
+            price: 100,
+            restaurantId: restaurant.id,
+          },
+          {
+            name: "Double",
+            nameHindi: "डबल",
+            price: 180,
+            restaurantId: restaurant.id,
+          },
         ],
       },
     },
@@ -551,13 +613,25 @@ async function main() {
   const mixParatha = await prisma.menuItem.create({
     data: {
       name: "Mix Veg Paratha",
+      nameHindi: "मिक्स वेज पराठा",
       description: "Mixed vegetables stuffed paratha",
+      descriptionHindi: "मिली जुली सब्जियों से भरा पराठा",
       categoryId: parathas.id,
       restaurantId: restaurant.id,
       variants: {
         create: [
-          { name: "Single", price: 90, restaurantId: restaurant.id },
-          { name: "Double", price: 160, restaurantId: restaurant.id },
+          {
+            name: "Single",
+            nameHindi: "सिंगल",
+            price: 90,
+            restaurantId: restaurant.id,
+          },
+          {
+            name: "Double",
+            nameHindi: "डबल",
+            price: 160,
+            restaurantId: restaurant.id,
+          },
         ],
       },
     },
@@ -567,11 +641,18 @@ async function main() {
   const vegPulao = await prisma.menuItem.create({
     data: {
       name: "Veg Pulao",
+      nameHindi: "वेज पुलाव",
       description: "Fragrant rice cooked with vegetables",
+      descriptionHindi: "सब्जियों के साथ पकाए गए सुगंधित चावल",
       categoryId: riceBiryani.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Plate", price: 150, restaurantId: restaurant.id },
+        create: {
+          name: "Plate",
+          nameHindi: "प्लेट",
+          price: 150,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -579,13 +660,25 @@ async function main() {
   const chickenBiryani = await prisma.menuItem.create({
     data: {
       name: "Hyderabadi Chicken Biryani",
+      nameHindi: "हैदराबादी चिकन बिरयानी",
       description: "Aromatic rice layered with marinated chicken",
+      descriptionHindi: "मैरीनेट किए हुए चिकन के साथ सुगंधित चावल",
       categoryId: riceBiryani.id,
       restaurantId: restaurant.id,
       variants: {
         create: [
-          { name: "Half", price: 180, restaurantId: restaurant.id },
-          { name: "Full", price: 280, restaurantId: restaurant.id },
+          {
+            name: "Half",
+            nameHindi: "हाफ",
+            price: 180,
+            restaurantId: restaurant.id,
+          },
+          {
+            name: "Full",
+            nameHindi: "फुल",
+            price: 280,
+            restaurantId: restaurant.id,
+          },
         ],
       },
     },
@@ -594,13 +687,25 @@ async function main() {
   const muttonBiryani = await prisma.menuItem.create({
     data: {
       name: "Mutton Dum Biryani",
+      nameHindi: "मटन दम बिरयानी",
       description: "Slow-cooked mutton biryani",
+      descriptionHindi: "धीमी आंच पर पकाई गई मटन बिरयानी",
       categoryId: riceBiryani.id,
       restaurantId: restaurant.id,
       variants: {
         create: [
-          { name: "Half", price: 220, restaurantId: restaurant.id },
-          { name: "Full", price: 380, restaurantId: restaurant.id },
+          {
+            name: "Half",
+            nameHindi: "हाफ",
+            price: 220,
+            restaurantId: restaurant.id,
+          },
+          {
+            name: "Full",
+            nameHindi: "फुल",
+            price: 380,
+            restaurantId: restaurant.id,
+          },
         ],
       },
     },
@@ -610,11 +715,18 @@ async function main() {
   const butterNaan = await prisma.menuItem.create({
     data: {
       name: "Butter Naan",
+      nameHindi: "बटर नान",
       description: "Soft leavened bread with butter",
+      descriptionHindi: "बटर के साथ नरम खमीरी रोटी",
       categoryId: bread.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Piece", price: 40, restaurantId: restaurant.id },
+        create: {
+          name: "Piece",
+          nameHindi: "पीस",
+          price: 40,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -622,11 +734,18 @@ async function main() {
   const garlicNaan = await prisma.menuItem.create({
     data: {
       name: "Garlic Naan",
+      nameHindi: "लहसुन नान",
       description: "Naan topped with garlic and coriander",
+      descriptionHindi: "लहसुन और धनिया से सजी नान",
       categoryId: bread.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Piece", price: 60, restaurantId: restaurant.id },
+        create: {
+          name: "Piece",
+          nameHindi: "पीस",
+          price: 60,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -634,11 +753,18 @@ async function main() {
   const tandooriRoti = await prisma.menuItem.create({
     data: {
       name: "Tandoori Roti",
+      nameHindi: "तंदूरी रोटी",
       description: "Whole wheat flatbread from tandoor",
+      descriptionHindi: "तंदूर से बनी साबुत गेहूं की रोटी",
       categoryId: bread.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Piece", price: 25, restaurantId: restaurant.id },
+        create: {
+          name: "Piece",
+          nameHindi: "पीस",
+          price: 25,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -647,11 +773,18 @@ async function main() {
   const paneerButterMasala = await prisma.menuItem.create({
     data: {
       name: "Paneer Butter Masala",
+      nameHindi: "पनीर बटर मसाला",
       description: "Cottage cheese in rich tomato gravy",
+      descriptionHindi: "गाढ़ी टमाटर की ग्रेवी में पनीर",
       categoryId: mainCourses.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Regular", price: 220, restaurantId: restaurant.id },
+        create: {
+          name: "Regular",
+          nameHindi: "रेगुलर",
+          price: 220,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -659,11 +792,18 @@ async function main() {
   const dalTadka = await prisma.menuItem.create({
     data: {
       name: "Dal Tadka",
+      nameHindi: "दाल तड़का",
       description: "Yellow lentils tempered with spices",
+      descriptionHindi: "मसालों के तड़के वाली पीली दाल",
       categoryId: mainCourses.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Regular", price: 160, restaurantId: restaurant.id },
+        create: {
+          name: "Regular",
+          nameHindi: "रेगुलर",
+          price: 160,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -671,13 +811,25 @@ async function main() {
   const butterChicken = await prisma.menuItem.create({
     data: {
       name: "Butter Chicken",
+      nameHindi: "बटर चिकन",
       description: "Tender chicken in creamy tomato sauce",
+      descriptionHindi: "क्रीमी टमाटर सॉस में नरम चिकन",
       categoryId: mainCourses.id,
       restaurantId: restaurant.id,
       variants: {
         create: [
-          { name: "Half", price: 200, restaurantId: restaurant.id },
-          { name: "Full", price: 320, restaurantId: restaurant.id },
+          {
+            name: "Half",
+            nameHindi: "हाफ",
+            price: 200,
+            restaurantId: restaurant.id,
+          },
+          {
+            name: "Full",
+            nameHindi: "फुल",
+            price: 320,
+            restaurantId: restaurant.id,
+          },
         ],
       },
     },
@@ -686,11 +838,18 @@ async function main() {
   const roganJosh = await prisma.menuItem.create({
     data: {
       name: "Rogan Josh",
+      nameHindi: "रोगन जोश",
       description: "Kashmiri mutton curry",
+      descriptionHindi: "कश्मीरी मटन करी",
       categoryId: mainCourses.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Regular", price: 360, restaurantId: restaurant.id },
+        create: {
+          name: "Regular",
+          nameHindi: "रेगुलर",
+          price: 360,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -699,11 +858,18 @@ async function main() {
   const sweetLassi = await prisma.menuItem.create({
     data: {
       name: "Sweet Lassi",
+      nameHindi: "मीठी लस्सी",
       description: "Chilled yogurt drink",
+      descriptionHindi: "ठंडा दही का पेय",
       categoryId: beverages.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Glass", price: 60, restaurantId: restaurant.id },
+        create: {
+          name: "Glass",
+          nameHindi: "गिलास",
+          price: 60,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -711,11 +877,18 @@ async function main() {
   const mangoLassi = await prisma.menuItem.create({
     data: {
       name: "Mango Lassi",
+      nameHindi: "आम की लस्सी",
       description: "Yogurt drink with mango pulp",
+      descriptionHindi: "आम के गूदे के साथ दही का पेय",
       categoryId: beverages.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Glass", price: 80, restaurantId: restaurant.id },
+        create: {
+          name: "Glass",
+          nameHindi: "गिलास",
+          price: 80,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -723,11 +896,18 @@ async function main() {
   const masalaChai = await prisma.menuItem.create({
     data: {
       name: "Masala Chai",
+      nameHindi: "मसाला चाय",
       description: "Indian spiced tea",
+      descriptionHindi: "भारतीय मसाला चाय",
       categoryId: beverages.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Cup", price: 30, restaurantId: restaurant.id },
+        create: {
+          name: "Cup",
+          nameHindi: "कप",
+          price: 30,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -735,11 +915,18 @@ async function main() {
   const softDrink = await prisma.menuItem.create({
     data: {
       name: "Soft Drink",
+      nameHindi: "कोल्ड ड्रिंक",
       description: "Coke, Pepsi, Sprite, etc.",
+      descriptionHindi: "कोक, पेप्सी, स्प्राइट आदि",
       categoryId: beverages.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Bottle", price: 40, restaurantId: restaurant.id },
+        create: {
+          name: "Bottle",
+          nameHindi: "बोतल",
+          price: 40,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -748,11 +935,18 @@ async function main() {
   const gulabJamun = await prisma.menuItem.create({
     data: {
       name: "Gulab Jamun",
+      nameHindi: "गुलाब जामुन",
       description: "Deep-fried milk balls in sugar syrup",
+      descriptionHindi: "चीनी की चाशनी में तले हुए दूध के गोले",
       categoryId: desserts.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "2 Pcs", price: 80, restaurantId: restaurant.id },
+        create: {
+          name: "2 Pcs",
+          nameHindi: "2 पीस",
+          price: 80,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -760,11 +954,18 @@ async function main() {
   const rasgulla = await prisma.menuItem.create({
     data: {
       name: "Rasgulla",
+      nameHindi: "रसगुल्ला",
       description: "Soft cottage cheese balls in syrup",
+      descriptionHindi: "चाशनी में नरम पनीर के गोले",
       categoryId: desserts.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "2 Pcs", price: 80, restaurantId: restaurant.id },
+        create: {
+          name: "2 Pcs",
+          nameHindi: "2 पीस",
+          price: 80,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -772,11 +973,18 @@ async function main() {
   const kulfiFalooda = await prisma.menuItem.create({
     data: {
       name: "Kulfi Falooda",
+      nameHindi: "कुल्फी फालूदा",
       description: "Traditional Indian ice cream with vermicelli",
+      descriptionHindi: "सेवई के साथ पारंपरिक भारतीय आइसक्रीम",
       categoryId: desserts.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Glass", price: 120, restaurantId: restaurant.id },
+        create: {
+          name: "Glass",
+          nameHindi: "गिलास",
+          price: 120,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });
@@ -784,11 +992,18 @@ async function main() {
   const iceCream = await prisma.menuItem.create({
     data: {
       name: "Ice Cream",
+      nameHindi: "आइसक्रीम",
       description: "Vanilla, Chocolate, or Strawberry",
+      descriptionHindi: "वनीला, चॉकलेट या स्ट्रॉबेरी",
       categoryId: desserts.id,
       restaurantId: restaurant.id,
       variants: {
-        create: { name: "Scoop", price: 100, restaurantId: restaurant.id },
+        create: {
+          name: "Scoop",
+          nameHindi: "स्कूप",
+          price: 100,
+          restaurantId: restaurant.id,
+        },
       },
     },
   });

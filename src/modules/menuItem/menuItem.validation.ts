@@ -6,10 +6,18 @@ export const menuItemValidation = [
     .withMessage("Name must be a string")
     .notEmpty()
     .withMessage("Name is required"),
+  body("nameHindi")
+    .optional()
+    .isString()
+    .withMessage("Hindi name must be a string"),
   body("description")
     .optional()
     .isString()
     .withMessage("Description must be a string"),
+  body("descriptionHindi")
+    .optional()
+    .isString()
+    .withMessage("Hindi description must be a string"),
   body("categoryId")
     .isString()
     .withMessage("Category ID must be a string")
@@ -27,6 +35,10 @@ export const menuItemValidation = [
     .isString()
     .notEmpty()
     .withMessage("Variant name is required and must be a string"),
+  body("variants.*.nameHindi")
+    .optional()
+    .isString()
+    .withMessage("Variant Hindi name must be a string"),
   body("variants.*.price")
     .isNumeric()
     .withMessage("Variant price is required and must be a number"),

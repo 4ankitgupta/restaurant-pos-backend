@@ -7,14 +7,15 @@ export const getAllMenuCategories = async (restaurantId: string) => {
 };
 
 export const createMenuCategory = async (
-  categoryData: { name: string; description?: string },
+  categoryData: { name: string; nameHindi?: string; description?: string },
   restaurantId: string
 ) => {
-  const { name, description } = categoryData;
+  const { name, nameHindi, description } = categoryData;
   return prisma.menuCategory.create({
     data: {
       name,
       restaurantId,
+      ...(nameHindi && { nameHindi }),
       ...(description && { description }),
     },
   });
@@ -22,7 +23,7 @@ export const createMenuCategory = async (
 
 export const updateMenuCategory = async (
   categoryId: string,
-  categoryData: { name?: string; description?: string },
+  categoryData: { name?: string; nameHindi?: string; description?: string },
   restaurantId: string
 ) => {
   const category = await prisma.menuCategory.findFirst({

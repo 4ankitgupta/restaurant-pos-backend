@@ -140,6 +140,7 @@ async function main() {
   const starters = await prisma.menuCategory.create({
     data: {
       name: "Starters",
+      nameHindi: "शुरुआत",
       restaurantId: restaurant.id,
     },
   });
@@ -147,6 +148,7 @@ async function main() {
   const riceBiryani = await prisma.menuCategory.create({
     data: {
       name: "Rice & Biryani",
+      nameHindi: "चावल और बिरयानी",
       restaurantId: restaurant.id,
     },
   });
@@ -154,6 +156,7 @@ async function main() {
   const bread = await prisma.menuCategory.create({
     data: {
       name: "Bread",
+      nameHindi: "रोटी",
       restaurantId: restaurant.id,
     },
   });
@@ -161,6 +164,7 @@ async function main() {
   const mainCourses = await prisma.menuCategory.create({
     data: {
       name: "Main Courses",
+      nameHindi: "मुख्य व्यंजन",
       restaurantId: restaurant.id,
     },
   });
@@ -168,6 +172,7 @@ async function main() {
   const deserts = await prisma.menuCategory.create({
     data: {
       name: "Deserts",
+      nameHindi: "मिठाई",
       restaurantId: restaurant.id,
     },
   });
@@ -181,6 +186,7 @@ async function main() {
   await prisma.menuItem.create({
     data: {
       name: "Paneer Tikka",
+      nameHindi: "पनीर टिक्का",
       categoryId: starters.id,
       restaurantId: restaurant.id,
       variants: {
@@ -196,6 +202,7 @@ async function main() {
   await prisma.menuItem.create({
     data: {
       name: "Veg Samosa (2 pcs)",
+      nameHindi: "वेज समोसा (2 पीस)",
       categoryId: starters.id,
       restaurantId: restaurant.id,
       variants: {
@@ -211,6 +218,7 @@ async function main() {
   await prisma.menuItem.create({
     data: {
       name: "Chicken Pakora",
+      nameHindi: "चिकन पकोड़ा",
       categoryId: starters.id,
       restaurantId: restaurant.id,
       variants: {
@@ -226,6 +234,7 @@ async function main() {
   await prisma.menuItem.create({
     data: {
       name: "Veg Pulao",
+      nameHindi: "वेज पुलाव",
       categoryId: riceBiryani.id,
       restaurantId: restaurant.id,
       variants: {
