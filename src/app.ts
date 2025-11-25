@@ -37,6 +37,7 @@ import employeeRoutes from "./modules/employee/employee.routes.js";
 import attendanceRoutes from "./modules/attendance/attendance.routes.js";
 import zomatoRoutes from "./modules/zomato/zomato.routes.js";
 import expenseRoutes from "./modules/expense/expense.routes.js";
+import publicRoutes from "./modules/public/public.routes.js";
 
 const app: Application = express();
 
@@ -84,6 +85,8 @@ apiRouter.use("/attendance", attendanceRoutes);
 apiRouter.use("/expenses", expenseRoutes);
 // Public routes for third-party integrations
 apiRouter.use("/public/zomato", zomatoRoutes);
+// Public routes for bill sharing
+apiRouter.use("/public", publicRoutes);
 
 // All API calls will be under /api/v1
 app.use("/api/v1", apiRouter);

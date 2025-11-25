@@ -3,6 +3,7 @@ import {
   getOrderDetailsController,
   getAllOrdersController,
   getActiveOrdersController,
+  sendWhatsAppBill,
 } from "./order.controller.js";
 import {
   authenticateJWT,
@@ -42,6 +43,13 @@ router.get(
   authenticateJWT,
   authorizeRoles(UserRole.KITCHEN_STAFF, UserRole.ADMIN, UserRole.MANAGER),
   getActiveOrdersController
+);
+
+router.post(
+  "/:orderId/whatsapp",
+  authenticateJWT,
+  authorizeRoles(UserRole.CASHIER, UserRole.ADMIN, UserRole.MANAGER),
+  sendWhatsAppBill
 );
 
 export default router;
