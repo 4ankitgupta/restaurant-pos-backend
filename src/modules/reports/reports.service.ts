@@ -661,7 +661,9 @@ export const generateTaxComplianceReport = async (
   const dailyTaxData: Record<string, any> = {};
 
   orders.forEach((order) => {
-    const dateKey = new Date(order.createdAt).toISOString().split("T")[0];
+    const dateKey = new Date(order.createdAt)
+      .toISOString()
+      .split("T")[0] as string;
     const orderAmount = order.totalAmount.toNumber();
 
     // Assuming 18% GST (9% CGST + 9% SGST)

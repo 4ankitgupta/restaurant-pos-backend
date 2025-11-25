@@ -1,4 +1,5 @@
 import prisma from "../../db/index.js";
+import { Prisma } from "@prisma/client";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
 import {
@@ -48,7 +49,9 @@ export const createPayment = async (paymentData: any, restaurantId: string) => {
       paymentMethod,
       tenderedAmount: tenderedAmount || amount,
       changeAmount: changeAmount > 0 ? changeAmount : 0,
-      coveredItems: orderItemIds ? JSON.stringify(orderItemIds) : null,
+      coveredItems: orderItemIds
+        ? JSON.stringify(orderItemIds)
+        : Prisma.JsonNull,
     },
   });
 
