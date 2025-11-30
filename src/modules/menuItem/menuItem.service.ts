@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "../../db/index.js";
 
 export class MenuItemService {
   async getAllMenuItems(restaurantId: string) {

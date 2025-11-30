@@ -54,7 +54,7 @@ export const getCompletedOrders = async (restaurantId: string) => {
     where: {
       restaurantId,
       status: OrderStatus.COMPLETED,
-      paymentStatus: PaymentStatus.PAID,
+      paymentStatus: { in: [PaymentStatus.PAID, PaymentStatus.REFUNDED] },
       createdAt: {
         gte: today,
       },
@@ -73,6 +73,7 @@ export const getCompletedOrders = async (restaurantId: string) => {
       },
       table: true,
       restaurant: true,
+      payments: true,
     },
     orderBy: {
       createdAt: "desc",
@@ -118,12 +119,9 @@ export const addItemsToOrder = async (
     let totalAmountToAdd = 0;
 
     // --- CHANGED LOGIC START ---
-    // If order is COMPLETED, items are SERVED immediately (e.g. over-the-counter add-on)
-    // If order is NOT completed (Pending/In Progress), items are ORDERED (sent to kitchen)
-    const newItemStatus =
-      order.status === OrderStatus.COMPLETED
-        ? OrderItemStatus.SERVED
-        : OrderItemStatus.ORDERED;
+    // All new items added via cashier should start as ORDERED
+    // They will go through the normal kitchen workflow
+    const newItemStatus = OrderItemStatus.ORDERED;
     // --- CHANGED LOGIC END ---
 
     const orderItemsToCreate = items.map((item) => {
@@ -157,14 +155,26 @@ export const addItemsToOrder = async (
     const newTotalAmount = Number(order.totalAmount) + totalAmountToAdd;
 
     // --- CHANGED LOGIC START ---
-    // If we added items as ORDERED to a PENDING order, switch it to IN_PROGRESS
+    // Determine the new order status
     let newOrderStatus = order.status;
-    if (
+
+    // If adding items to a COMPLETED order, reopen it to IN_PROGRESS
+    if (order.status === OrderStatus.COMPLETED) {
+      newOrderStatus = OrderStatus.IN_PROGRESS;
+    }
+    // If we added items as ORDERED to a PENDING order, switch it to IN_PROGRESS
+    else if (
       newItemStatus === OrderItemStatus.ORDERED &&
       order.status === OrderStatus.PENDING
     ) {
       newOrderStatus = OrderStatus.IN_PROGRESS;
     }
+
+    // Also reset payment status to UNPAID when adding items to completed order
+    const paymentUpdate =
+      order.status === OrderStatus.COMPLETED
+        ? { paymentStatus: PaymentStatus.UNPAID }
+        : {};
     // --- CHANGED LOGIC END ---
 
     const finalOrder = await tx.order.update({
@@ -172,6 +182,7 @@ export const addItemsToOrder = async (
       data: {
         totalAmount: newTotalAmount,
         status: newOrderStatus,
+        ...paymentUpdate,
       },
       include: {
         orderItems: {

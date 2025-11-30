@@ -1435,7 +1435,7 @@ async function main() {
   const order1 = await prisma.order.create({
     data: {
       restaurantId: restaurant.id,
-      tableId: tables[0].id,
+      tableId: tables[0]!.id,
       userId: waiter1.id,
       status: OrderStatus.COMPLETED,
       paymentStatus: PaymentStatus.PAID,
@@ -1446,21 +1446,24 @@ async function main() {
         create: [
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Aloo Paratha", "Double")?.id,
+            menuItemVariantId:
+              getVariantByName("Aloo Paratha", "Double")?.id ?? null,
             quantity: 2,
             price: 140,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Sweet Lassi", "Glass")?.id,
+            menuItemVariantId:
+              getVariantByName("Sweet Lassi", "Glass")?.id ?? null,
             quantity: 2,
             price: 60,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Paneer Tikka", "Full")?.id,
+            menuItemVariantId:
+              getVariantByName("Paneer Tikka", "Full")?.id ?? null,
             quantity: 1,
             price: 250,
             status: OrderItemStatus.SERVED,
@@ -1482,7 +1485,7 @@ async function main() {
   const order2 = await prisma.order.create({
     data: {
       restaurantId: restaurant.id,
-      tableId: tables[2].id,
+      tableId: tables[2]!.id,
       userId: waiter2.id,
       status: OrderStatus.COMPLETED,
       paymentStatus: PaymentStatus.PAID,
@@ -1493,31 +1496,33 @@ async function main() {
         create: [
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName(
-              "Hyderabadi Chicken Biryani",
-              "Full"
-            )?.id,
+            menuItemVariantId:
+              getVariantByName("Hyderabadi Chicken Biryani", "Full")?.id ??
+              null,
             quantity: 2,
             price: 280,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Butter Chicken", "Full")?.id,
+            menuItemVariantId:
+              getVariantByName("Butter Chicken", "Full")?.id ?? null,
             quantity: 1,
             price: 320,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Garlic Naan", "Piece")?.id,
+            menuItemVariantId:
+              getVariantByName("Garlic Naan", "Piece")?.id ?? null,
             quantity: 4,
             price: 60,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Gulab Jamun", "2 Pcs")?.id,
+            menuItemVariantId:
+              getVariantByName("Gulab Jamun", "2 Pcs")?.id ?? null,
             quantity: 1,
             price: 80,
             status: OrderItemStatus.SERVED,
@@ -1551,32 +1556,32 @@ async function main() {
         create: [
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Mutton Dum Biryani", "Full")
-              ?.id,
+            menuItemVariantId:
+              getVariantByName("Mutton Dum Biryani", "Full")?.id ?? null,
             quantity: 1,
             price: 380,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName(
-              "Paneer Butter Masala",
-              "Regular"
-            )?.id,
+            menuItemVariantId:
+              getVariantByName("Paneer Butter Masala", "Regular")?.id ?? null,
             quantity: 1,
             price: 220,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Butter Naan", "Piece")?.id,
+            menuItemVariantId:
+              getVariantByName("Butter Naan", "Piece")?.id ?? null,
             quantity: 6,
             price: 40,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Rasgulla", "2 Pcs")?.id,
+            menuItemVariantId:
+              getVariantByName("Rasgulla", "2 Pcs")?.id ?? null,
             quantity: 1,
             price: 80,
             status: OrderItemStatus.SERVED,
@@ -1599,7 +1604,7 @@ async function main() {
   const order4 = await prisma.order.create({
     data: {
       restaurantId: restaurant.id,
-      tableId: tables[3].id,
+      tableId: tables[3]!.id,
       userId: waiter1.id,
       status: OrderStatus.IN_PROGRESS,
       paymentStatus: PaymentStatus.UNPAID,
@@ -1609,35 +1614,40 @@ async function main() {
         create: [
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Paneer Paratha", "Double")?.id,
+            menuItemVariantId:
+              getVariantByName("Paneer Paratha", "Double")?.id ?? null,
             quantity: 2,
             price: 180,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Dal Tadka", "Regular")?.id,
+            menuItemVariantId:
+              getVariantByName("Dal Tadka", "Regular")?.id ?? null,
             quantity: 1,
             price: 160,
             status: OrderItemStatus.PREPARING,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Tandoori Roti", "Piece")?.id,
+            menuItemVariantId:
+              getVariantByName("Tandoori Roti", "Piece")?.id ?? null,
             quantity: 4,
             price: 25,
             status: OrderItemStatus.PREPARED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Mango Lassi", "Glass")?.id,
+            menuItemVariantId:
+              getVariantByName("Mango Lassi", "Glass")?.id ?? null,
             quantity: 2,
             price: 80,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Kulfi Falooda", "Glass")?.id,
+            menuItemVariantId:
+              getVariantByName("Kulfi Falooda", "Glass")?.id ?? null,
             quantity: 1,
             price: 120,
             status: OrderItemStatus.ORDERED,
@@ -1649,7 +1659,7 @@ async function main() {
 
   // Update Table 4 status
   await prisma.table.update({
-    where: { id: tables[3].id },
+    where: { id: tables[3]!.id },
     data: { status: TableStatus.Occupied },
   });
 
@@ -1657,7 +1667,7 @@ async function main() {
   const order5 = await prisma.order.create({
     data: {
       restaurantId: restaurant.id,
-      tableId: tables[6].id,
+      tableId: tables[6]!.id,
       userId: waiter2.id,
       status: OrderStatus.PENDING,
       paymentStatus: PaymentStatus.UNPAID,
@@ -1667,28 +1677,32 @@ async function main() {
         create: [
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Veg Samosa", "2 Pcs")?.id,
+            menuItemVariantId:
+              getVariantByName("Veg Samosa", "2 Pcs")?.id ?? null,
             quantity: 2,
             price: 60,
             status: OrderItemStatus.ORDERED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Veg Pulao", "Plate")?.id,
+            menuItemVariantId:
+              getVariantByName("Veg Pulao", "Plate")?.id ?? null,
             quantity: 2,
             price: 150,
             status: OrderItemStatus.ORDERED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Paneer Tikka", "Half")?.id,
+            menuItemVariantId:
+              getVariantByName("Paneer Tikka", "Half")?.id ?? null,
             quantity: 1,
             price: 150,
             status: OrderItemStatus.ORDERED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Masala Chai", "Cup")?.id,
+            menuItemVariantId:
+              getVariantByName("Masala Chai", "Cup")?.id ?? null,
             quantity: 2,
             price: 30,
             status: OrderItemStatus.ORDERED,
@@ -1700,7 +1714,7 @@ async function main() {
 
   // Update Table 7 status
   await prisma.table.update({
-    where: { id: tables[6].id },
+    where: { id: tables[6]!.id },
     data: { status: TableStatus.Occupied },
   });
 
@@ -1708,7 +1722,7 @@ async function main() {
   const order6 = await prisma.order.create({
     data: {
       restaurantId: restaurant.id,
-      tableId: tables[4].id,
+      tableId: tables[4]!.id,
       userId: waiter1.id,
       status: OrderStatus.IN_PROGRESS,
       paymentStatus: PaymentStatus.UNPAID,
@@ -1718,45 +1732,49 @@ async function main() {
         create: [
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Chicken Pakora", "Full")?.id,
+            menuItemVariantId:
+              getVariantByName("Chicken Pakora", "Full")?.id ?? null,
             quantity: 2,
             price: 200,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName(
-              "Hyderabadi Chicken Biryani",
-              "Full"
-            )?.id,
+            menuItemVariantId:
+              getVariantByName("Hyderabadi Chicken Biryani", "Full")?.id ??
+              null,
             quantity: 3,
             price: 280,
             status: OrderItemStatus.PREPARING,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Rogan Josh", "Regular")?.id,
+            menuItemVariantId:
+              getVariantByName("Rogan Josh", "Regular")?.id ?? null,
             quantity: 1,
             price: 360,
             status: OrderItemStatus.PREPARING,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Garlic Naan", "Piece")?.id,
+            menuItemVariantId:
+              getVariantByName("Garlic Naan", "Piece")?.id ?? null,
             quantity: 8,
             price: 60,
             status: OrderItemStatus.PREPARED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Soft Drink", "Bottle")?.id,
+            menuItemVariantId:
+              getVariantByName("Soft Drink", "Bottle")?.id ?? null,
             quantity: 4,
             price: 40,
             status: OrderItemStatus.SERVED,
           },
           {
             restaurantId: restaurant.id,
-            menuItemVariantId: getVariantByName("Ice Cream", "Scoop")?.id,
+            menuItemVariantId:
+              getVariantByName("Ice Cream", "Scoop")?.id ?? null,
             quantity: 3,
             price: 100,
             status: OrderItemStatus.ORDERED,
@@ -1769,13 +1787,13 @@ async function main() {
 
   // Update Table 5 status
   await prisma.table.update({
-    where: { id: tables[4].id },
+    where: { id: tables[4]!.id },
     data: { status: TableStatus.Occupied },
   });
 
   // Table needs cleaning
   await prisma.table.update({
-    where: { id: tables[1].id },
+    where: { id: tables[1]!.id },
     data: { status: TableStatus.NeedCleaning },
   });
 

@@ -88,6 +88,7 @@ export const getOrderDetails = async (
       },
       table: true, // Also include table details
       restaurant: true, // Include restaurant details for bill receipt
+      payments: true, // Include payment details for bill receipt
     },
   });
   if (!order) {
@@ -122,6 +123,7 @@ export const getActiveOrderByTable = async (
       },
       table: true,
       restaurant: true,
+      payments: true, // Include payment details for bill receipt
     },
   });
 
@@ -215,6 +217,7 @@ export const addItemsToOrder = async (
         },
         table: true,
         restaurant: true,
+        payments: true, // Include payment details for bill receipt
       },
     });
 
@@ -249,6 +252,7 @@ export const getAllOrders = async (restaurantId: string) => {
       },
       table: true,
       restaurant: true,
+      payments: true, // Include payment details for bill receipt
     },
     orderBy: {
       createdAt: "desc",
@@ -371,6 +375,7 @@ export const zomatoOrderToPos = async (payload: any, restaurantId: string) => {
         },
         table: true,
         restaurant: true,
+        payments: true, // Include payment details for bill receipt
       },
     });
     return updated;

@@ -85,6 +85,18 @@ export const createPayment = async (paymentData: any, restaurantId: string) => {
     paymentStatus = PaymentStatus.PAID;
     // Always mark as COMPLETED if fully paid
     orderStatus = OrderStatus.COMPLETED;
+
+    // Mark all non-cancelled order items as SERVED (completed)
+    await prisma.orderItem.updateMany({
+      where: {
+        orderId,
+        restaurantId,
+        status: { not: "CANCELLED" },
+      },
+      data: {
+        status: "SERVED",
+      },
+    });
   }
 
   const updatedOrder = await prisma.order.update({
@@ -140,6 +152,20 @@ export const refundPayment = async (orderId: string, restaurantId: string) => {
   const updatedOrder = await prisma.order.update({
     where: { id: orderId },
     data: { paymentStatus: PaymentStatus.REFUNDED },
+    include: {
+      orderItems: {
+        include: {
+          menuItemVariant: {
+            include: {
+              menuItem: true,
+            },
+          },
+        },
+      },
+      table: true,
+      restaurant: true,
+      payments: true,
+    },
   });
 
   broadcastToRestaurant(restaurantId, {
