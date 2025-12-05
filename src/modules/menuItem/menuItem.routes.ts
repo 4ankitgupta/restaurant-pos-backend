@@ -1,8 +1,12 @@
 import { Router } from "express";
 import { MenuItemController } from "./menuItem.controller.js";
-import { authenticateJWT } from "../../middlewares/auth.middleware.js";
+import {
+  authenticateJWT,
+  authorizeRoles,
+} from "../../middlewares/auth.middleware.js";
 import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
 import { menuItemValidation } from "./menuItem.validation.js"; // Import the validation rules
+import { UserRole } from "@prisma/client";
 
 const router = Router();
 const menuItemController = new MenuItemController();
@@ -16,6 +20,7 @@ router.get(
 router.post(
   "/",
   authenticateJWT,
+  authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
   enforceTenancy,
   menuItemValidation, // Add validation middleware
   menuItemController.createMenuItem.bind(menuItemController)
@@ -30,6 +35,7 @@ router.get(
 router.put(
   "/:id",
   authenticateJWT,
+  authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
   menuItemValidation, // Add validation middleware
   menuItemController.updateMenuItem.bind(menuItemController)
 );
@@ -37,6 +43,7 @@ router.put(
 router.delete(
   "/:id",
   authenticateJWT,
+  authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
   menuItemController.deleteMenuItem.bind(menuItemController)
 );
 

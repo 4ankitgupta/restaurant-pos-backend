@@ -50,21 +50,26 @@ router
 
 router.post(
   "/:tableId/seat", // Changed from /allocate
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
+  authorizeRoles(UserRole.WAITER, UserRole.MANAGER, UserRole.ADMIN),
   enforceTenancy,
   seatTableController
 );
 
 router.patch(
   "/:tableId/status",
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER),
+  authorizeRoles(UserRole.WAITER, UserRole.MANAGER, UserRole.ADMIN),
   updateTableStatusController
 );
 
 // --- NEW ---
 router.get(
   "/:tableId/active-order",
-  authorizeRoles(UserRole.WAITER, UserRole.MANAGER, UserRole.CASHIER),
+  authorizeRoles(
+    UserRole.WAITER,
+    UserRole.MANAGER,
+    UserRole.CASHIER,
+    UserRole.ADMIN
+  ),
   getActiveOrderByTableController
 );
 
