@@ -6,8 +6,11 @@ export class MenuItemService {
     return prisma.menuItem.findMany({
       where: { restaurantId },
       include: {
-        variants: true,
+        variants: {
+          orderBy: { sortOrder: "asc" },
+        },
       },
+      orderBy: { sortOrder: "asc" },
     });
   }
 
@@ -16,7 +19,9 @@ export class MenuItemService {
     return prisma.menuItem.findFirst({
       where: { id, restaurantId },
       include: {
-        variants: true,
+        variants: {
+          orderBy: { sortOrder: "asc" },
+        },
       },
     });
   }
@@ -29,6 +34,8 @@ export class MenuItemService {
       descriptionHindi,
       categoryId,
       variants,
+      isFavorite,
+      sortOrder,
     } = data;
 
     // Use a nested write to create the item and its variants in one transaction
@@ -40,17 +47,23 @@ export class MenuItemService {
         ...(descriptionHindi && { descriptionHindi }),
         categoryId,
         restaurantId,
+        ...(isFavorite !== undefined && { isFavorite }),
+        ...(sortOrder !== undefined && { sortOrder }),
         variants: {
-          create: variants.map((variant: any) => ({
+          create: variants.map((variant: any, index: number) => ({
             name: variant.name,
             ...(variant.nameHindi && { nameHindi: variant.nameHindi }),
             price: variant.price,
             restaurantId: restaurantId, // Ensure tenancy on the variant
+            sortOrder:
+              variant.sortOrder !== undefined ? variant.sortOrder : index,
           })),
         },
       },
       include: {
-        variants: true, // Return the new item with its variants
+        variants: {
+          orderBy: { sortOrder: "asc" },
+        },
       },
     });
   }
@@ -63,6 +76,8 @@ export class MenuItemService {
       descriptionHindi,
       categoryId,
       variants,
+      isFavorite,
+      sortOrder,
     } = data;
 
     // Prepare data for the main menu item update
@@ -77,6 +92,12 @@ export class MenuItemService {
     if (descriptionHindi !== undefined) {
       menuDataToUpdate.descriptionHindi = descriptionHindi;
     }
+    if (isFavorite !== undefined) {
+      menuDataToUpdate.isFavorite = isFavorite;
+    }
+    if (sortOrder !== undefined) {
+      menuDataToUpdate.sortOrder = sortOrder;
+    }
 
     // If variants are provided, we replace the old ones with the new ones.
     // This is done by deleting all existing variants and creating the new set.
@@ -85,11 +106,13 @@ export class MenuItemService {
         // Delete all variants associated with this menu item
         deleteMany: {},
         // Create the new list of variants
-        create: variants.map((variant: any) => ({
+        create: variants.map((variant: any, index: number) => ({
           name: variant.name,
           ...(variant.nameHindi && { nameHindi: variant.nameHindi }),
           price: variant.price,
           restaurantId: restaurantId, // Ensure tenancy
+          sortOrder:
+            variant.sortOrder !== undefined ? variant.sortOrder : index,
         })),
       };
     }
@@ -99,7 +122,9 @@ export class MenuItemService {
       where: { id, restaurantId },
       data: menuDataToUpdate,
       include: {
-        variants: true, // Return the updated item with its variants
+        variants: {
+          orderBy: { sortOrder: "asc" },
+        },
       },
     });
   }
@@ -110,5 +135,28 @@ export class MenuItemService {
     // that when a MenuItem is deleted, its associated MenuItemVariants are also deleted.
     // @ts-ignore
     return prisma.menuItem.delete({ where: { id, restaurantId } });
+  }
+
+  async reorderMenuItems(itemIds: string[], restaurantId: string) {
+    // Verify all items belong to this restaurant
+    const items = await prisma.menuItem.findMany({
+      where: { id: { in: itemIds }, restaurantId },
+    });
+
+    if (items.length !== itemIds.length) {
+      throw new Error("Invalid menu item IDs");
+    }
+
+    // Update sortOrder for each item in a transaction
+    await prisma.$transaction(
+      itemIds.map((id, index) =>
+        prisma.menuItem.update({
+          where: { id },
+          data: { sortOrder: index },
+        })
+      )
+    );
+
+    return this.getAllMenuItems(restaurantId);
   }
 }

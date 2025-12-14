@@ -89,6 +89,7 @@ model MenuCategory {
   name          String
   nameHindi     String?
   description   String?
+  sortOrder     Int        @default(0)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
@@ -103,6 +104,8 @@ model MenuItem {
   description     String?
   descriptionHindi String?
   isAvailable     Boolean       @default(true)
+  isFavorite      Boolean       @default(false)
+  sortOrder       Int           @default(0)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   restaurant      Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
@@ -117,6 +120,7 @@ model MenuItemVariant {
   nameHindi    String?
   price        Decimal
   isAvailable  Boolean   @default(true)
+  sortOrder    Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   menuItem     MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)

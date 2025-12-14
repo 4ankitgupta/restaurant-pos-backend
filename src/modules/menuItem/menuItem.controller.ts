@@ -144,4 +144,33 @@ export class MenuItemController {
       return res.status(500).json({ message: "Error deleting menu item" });
     }
   }
+
+  public async reorderMenuItems(
+    req: AuthRequest,
+    res: Response
+  ): Promise<Response> {
+    const restaurantId = req.user?.restaurantId;
+    const { itemIds } = req.body;
+
+    if (!itemIds || !Array.isArray(itemIds)) {
+      return res.status(400).json({ message: "itemIds array is required" });
+    }
+
+    if (!restaurantId) {
+      return res.status(400).json({ message: "Restaurant ID is required" });
+    }
+
+    try {
+      const reorderedItems = await this.menuItemService.reorderMenuItems(
+        itemIds,
+        restaurantId
+      );
+      return res.status(200).json(reorderedItems);
+    } catch (error: any) {
+      console.error("Error reordering menu items:", error);
+      return res
+        .status(500)
+        .json({ message: "Error reordering menu items", error: error.message });
+    }
+  }
 }

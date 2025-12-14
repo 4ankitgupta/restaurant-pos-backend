@@ -4,6 +4,7 @@ import {
   createMenuCategoryController,
   updateMenuCategoryController,
   deleteMenuCategoryController,
+  reorderMenuCategoriesController,
 } from "./menuCategory.controller.js";
 import {
   authenticateJWT,
@@ -33,6 +34,12 @@ router.delete(
   authenticateJWT,
   authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
   deleteMenuCategoryController
+);
+router.post(
+  "/reorder",
+  authenticateJWT,
+  authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
+  reorderMenuCategoriesController
 );
 
 export default router;

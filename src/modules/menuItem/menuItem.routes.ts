@@ -47,4 +47,11 @@ router.delete(
   menuItemController.deleteMenuItem.bind(menuItemController)
 );
 
+router.post(
+  "/reorder",
+  authenticateJWT,
+  authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
+  menuItemController.reorderMenuItems.bind(menuItemController)
+);
+
 export default router;

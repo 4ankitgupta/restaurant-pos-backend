@@ -80,3 +80,31 @@ export const deleteMenuCategoryController = asyncHandler(
       );
   }
 );
+
+export const reorderMenuCategoriesController = asyncHandler(
+  async (req: AuthRequest, res: Response) => {
+    const restaurantId = req.user?.restaurantId;
+    const { categoryIds } = req.body;
+
+    if (!categoryIds || !Array.isArray(categoryIds)) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "categoryIds array is required"
+      );
+    }
+
+    const reorderedCategories = await menuCategoryService.reorderMenuCategories(
+      categoryIds,
+      restaurantId!
+    );
+    res
+      .status(httpStatus.OK)
+      .json(
+        new ApiResponse(
+          httpStatus.OK,
+          reorderedCategories,
+          "Categories reordered successfully"
+        )
+      );
+  }
+);
