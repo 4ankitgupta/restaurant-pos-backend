@@ -29,6 +29,7 @@ model Restaurant {
   phone2          String?           // Secondary Phone Number
   gstin           String?           // GSTIN Number
   logoUrl         String?           // URL path to the logo image
+  upiQrCodeUrl    String?           // URL path to the UPI QR code image
   address         String?
   isActive        Boolean           @default(true)
   featureFlags    Json?             @default("{}") // Stores flags like { "ai_chat": true, "inventory": false }

@@ -38,6 +38,7 @@ import attendanceRoutes from "./modules/attendance/attendance.routes.js";
 import zomatoRoutes from "./modules/zomato/zomato.routes.js";
 import expenseRoutes from "./modules/expense/expense.routes.js";
 import publicRoutes from "./modules/public/public.routes.js";
+import restaurantRoutes from "./modules/restaurant/restaurant.routes.js";
 
 const app: Application = express();
 
@@ -61,6 +62,15 @@ if (!fs.existsSync(logosPath)) {
 app.use("/logos", express.static(logosPath));
 logger.info(`🖼️ Serving logos from: ${logosPath}`);
 
+// --- Serve QR codes folder statically ---
+const qrCodesPath = path.resolve(process.cwd(), "qrcodes");
+if (!fs.existsSync(qrCodesPath)) {
+  fs.mkdirSync(qrCodesPath, { recursive: true });
+  logger.info(`📁 Created qrcodes directory at: ${qrCodesPath}`);
+}
+app.use("/qrcodes", express.static(qrCodesPath));
+logger.info(`🖼️ Serving QR codes from: ${qrCodesPath}`);
+
 // --- API Routes ---
 const apiRouter = express.Router();
 apiRouter.use("/auth", authRoutes);
@@ -83,6 +93,7 @@ apiRouter.use("/agent", agentRoutes);
 apiRouter.use("/employees", employeeRoutes);
 apiRouter.use("/attendance", attendanceRoutes);
 apiRouter.use("/expenses", expenseRoutes);
+apiRouter.use("/restaurant", restaurantRoutes);
 // Public routes for third-party integrations
 apiRouter.use("/public/zomato", zomatoRoutes);
 // Public routes for bill sharing
