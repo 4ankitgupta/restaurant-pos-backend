@@ -5,6 +5,8 @@ import {
   authorizeRoles,
 } from "../../middlewares/auth.middleware.js";
 import { enforceTenancy } from "../../middlewares/tenancy.middleware.js";
+import { validate } from "../../middlewares/validate.middleware.js";
+import { changePasswordSchema } from "./users.validation.js";
 import { UserRole } from "@prisma/client";
 
 const router = Router();
@@ -32,6 +34,13 @@ router.put(
   authenticateJWT,
   authorizeRoles(UserRole.ADMIN, UserRole.MANAGER),
   userController.updateUser.bind(userController)
+);
+router.patch(
+  "/:id/change-password",
+  authenticateJWT,
+  authorizeRoles(UserRole.ADMIN),
+  validate(changePasswordSchema),
+  userController.changePassword.bind(userController)
 );
 router.delete(
   "/:id",

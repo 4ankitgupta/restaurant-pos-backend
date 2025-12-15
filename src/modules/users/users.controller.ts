@@ -101,4 +101,41 @@ export class UserController {
       res.status(500).json({ message: "Error deleting user" });
     }
   }
+
+  public async changePassword(req: AuthRequest, res: Response): Promise<void> {
+    const { id } = req.params;
+    const { adminPassword, newPassword } = req.body;
+
+    if (!id) {
+      res.status(400).json({ message: "User ID is required" });
+      return;
+    }
+
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    try {
+      await this.userService.changePassword(
+        id,
+        req.user.id,
+        adminPassword,
+        newPassword,
+        req.user?.restaurantId,
+        req.user?.role as UserRole
+      );
+      res.status(200).json({ message: "Password changed successfully" });
+    } catch (error: any) {
+      if (error.statusCode === 401) {
+        res
+          .status(401)
+          .json({ message: error.message || "Incorrect admin password" });
+      } else if (error.statusCode === 404) {
+        res.status(404).json({ message: error.message || "User not found" });
+      } else {
+        res.status(500).json({ message: "Error changing password" });
+      }
+    }
+  }
 }

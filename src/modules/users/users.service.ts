@@ -1,4 +1,5 @@
 import { type UserRole } from "@prisma/client";
+import bcrypt from "bcrypt";
 import prisma from "../../db/index.js";
 import { ApiError } from "../../utils/ApiError.js";
 import httpStatus from "http-status";
@@ -65,5 +66,61 @@ export class UserService {
     if (!existing) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
 
     return prisma.user.delete({ where: { id } });
+  }
+
+  async changePassword(
+    targetUserId: string,
+    requesterId: string,
+    adminPassword: string,
+    newPassword: string,
+    restaurantId?: string,
+    role?: UserRole
+  ) {
+    // Step 1: Verify the admin user making the request
+    const adminUser = await prisma.user.findUnique({
+      where: { id: requesterId },
+      select: { id: true, passwordHash: true, restaurantId: true },
+    });
+
+    if (!adminUser) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "Admin user not found");
+    }
+
+    // Step 2: Verify the admin's password
+    const isPasswordValid = await bcrypt.compare(
+      adminPassword,
+      adminUser.passwordHash
+    );
+    if (!isPasswordValid) {
+      throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect admin password");
+    }
+
+    // Step 3: Find the target user and verify access rights
+    let targetUser;
+    if ((role as unknown as string) === "SUPERADMIN") {
+      targetUser = await prisma.user.findUnique({
+        where: { id: targetUserId },
+      });
+    } else {
+      // Ensure target user belongs to the same restaurant
+      targetUser = await prisma.user.findFirst({
+        where: { id: targetUserId, restaurantId: restaurantId! },
+      });
+    }
+
+    if (!targetUser) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Target user not found");
+    }
+
+    // Step 4: Hash the new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Step 5: Update the target user's password
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    return { success: true };
   }
 }
